@@ -1063,20 +1063,27 @@ function showCsvModal(csv,filename,tableHtml){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML=`<div style="background:#fff;border-radius:8px;width:820px;max-height:85vh;display:flex;flex-direction:column;padding:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div><div style="font-size:15px;font-weight:500">📊 ${filename}</div></div>
+      <div style="font-size:15px;font-weight:500">📊 ${filename}</div>
       <button onclick="document.getElementById('csv-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
     </div>
-    <!-- テーブル表示 -->
     <div style="overflow:auto;margin-bottom:14px;border:1px solid #ddd;border-radius:6px">${tableHtml}</div>
-    <!-- コピー用CSV -->
-    <div style="font-size:12px;font-weight:500;color:#555;margin-bottom:6px">📋 コピー用CSV（Excelやスプレッドシートに貼り付け）</div>
-    <textarea id="csv-text" style="height:90px;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:11px;font-family:monospace;resize:none;background:#f8f8f8">${csv}</textarea>
     <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
       <button class="mbtn" onclick="document.getElementById('csv-modal').remove()">閉じる</button>
-      <button class="mbtn primary" onclick="const t=document.getElementById('csv-text');t.select();document.execCommand('copy');toast('✓ コピーしました','#1a8fc7')">📋 CSVをコピー</button>
+      <button class="mbtn primary" onclick="downloadCsvFile('${filename}')">📥 CSVをダウンロード</button>
     </div>
   </div>`;
+  modal._csvData=csv;
   document.body.appendChild(modal);
+  document.getElementById('csv-modal')._csvData=csv;
+}
+function downloadCsvFile(filename){
+  const csv=document.getElementById('csv-modal')?._csvData||'';
+  const bom='\uFEFF';
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('✓ CSVをダウンロードしました','#1a8fc7');
 }
 let shiftMonthOffset=0;
 function shiftMonthMove(d){shiftMonthOffset+=d;renderShiftMonth()}

@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,sans-serif);font-size:13px;background:#f5f5f5;color:#222;height:100vh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh}
+.topbar{background:#1a8fc7;display:flex;align-items:center;padding:0 16px;height:44px;gap:4px;flex-shrink:0;position:relative}
+.topbar-logo{color:#fff;font-size:15px;font-weight:700;margin-right:8px}
+.topbar-nav{display:flex;height:100%}
+.topbar-nav>a{color:rgba(255,255,255,0.85);padding:0 10px;display:flex;align-items:center;cursor:pointer;font-size:12px;border-bottom:3px solid transparent;white-space:nowrap;position:relative}
+.topbar-nav>a:hover,.topbar-nav>a.active{color:#fff;background:rgba(255,255,255,0.1)}
+.topbar-nav>a.active{border-bottom-color:#fff}
+.topbar-nav>a.has-sub.open{background:rgba(255,255,255,0.15)}
+.sub-menu{position:absolute;top:44px;left:0;background:#fff;border:1px solid #ddd;border-radius:0 0 6px 6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:160px;z-index:100;display:none}
+.sub-menu.open{display:block}
+.sub-menu a{display:block;padding:10px 16px;font-size:13px;color:#333;cursor:pointer;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+.sub-menu a:last-child{border-bottom:none}
+.sub-menu a:hover{background:#f0f7ff;color:#1a8fc7}
+.sub-menu a.active{background:#e8f4fb;color:#1a8fc7;font-weight:500}
+.main{display:flex;flex:1;overflow:hidden}
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex}
+.sidebar{width:190px;min-width:190px;background:#fff;border-right:1px solid #ddd;overflow-y:auto;padding:10px;flex-shrink:0}
+.mc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.mc-title{font-size:12px;font-weight:500}
+.mc-btn{background:none;border:none;cursor:pointer;color:#666;font-size:13px;padding:2px 4px}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mc-dh{text-align:center;font-size:10px;color:#888;padding:2px 0}
+.mc-d{text-align:center;font-size:11px;padding:3px 1px;cursor:pointer;border-radius:2px}
+.mc-d:hover{background:#e8f4fb}
+.mc-d.today-mc{background:#1a8fc7;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin:auto}
+.mc-d.om{color:#ccc}.mc-d.sat{color:#1a8fc7}.mc-d.sun{color:#e24b4a}
+.content-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cal-toolbar{background:#fff;border-bottom:1px solid #ddd;padding:6px 12px;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.cal-period{font-size:14px;font-weight:500;min-width:180px}
+.cal-nav-btn{border:1px solid #ccc;background:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px}
+.cal-nav-btn:hover{background:#f0f0f0}
+.cal-today-btn{background:#1a8fc7;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:500}
+.view-toggle{display:flex;border:1px solid #ccc;border-radius:4px;overflow:hidden;margin-left:auto}
+.view-toggle button{border:none;background:#fff;padding:4px 12px;cursor:pointer;font-size:12px}
+.view-toggle button.active{background:#1a8fc7;color:#fff}
+.cal-wrap{flex:1;overflow:auto}
+.bk-block{border-radius:4px;padding:3px 6px;margin:0;cursor:pointer;border-left:4px solid;font-size:11px;height:46px;max-height:46px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.bk-block.confirmed{background:#dbeeff;border-color:#1a8fc7;color:#0a3d6b}
+.bk-block.rest{background:#ffe4e4;border-color:#e24b4a;color:#8a1a1a}
+.bk-block.trial{background:#e4f8e4;border-color:#4caf50;color:#1a5c1a}
+.bk-block.nominated{background:#fff3d0;border-color:#f5a623;color:#6b3d00}
+.bk-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-course{font-size:10px;opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.bk-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:700;color:#fff;margin-right:3px;flex-shrink:0}
+.bk-badge.c{background:#1a8fc7}.bk-badge.r{background:#e24b4a}.bk-badge.t{background:#4caf50}.bk-badge.n{background:#f5a623}
+.side-panel{width:340px;min-width:340px;background:#fff;border-left:1px solid #ddd;display:flex;flex-direction:column;flex-shrink:0}
+.side-panel.hidden{width:0;min-width:0;overflow:hidden}
+.shift-panel{width:380px;min-width:380px;background:#fff;border-left:1px solid #ddd;display:flex;flex-direction:column;flex-shrink:0}
+.shift-panel.hidden{width:0;min-width:0;overflow:hidden}
+.panel-hd{padding:12px 14px;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-hd-title{font-size:14px;font-weight:500;color:#1a8fc7}
+.panel-close{background:none;border:none;cursor:pointer;font-size:20px;color:#888;line-height:1}
+.panel-body{padding:14px;overflow-y:auto;flex:1}
+.pnl-actions{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.pnl-btn{padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;border:1px solid #ccc;background:#fff}
+.pnl-btn:hover{background:#f0f0f0}
+.pnl-btn.danger{border-color:#e24b4a;color:#e24b4a}
+.pnl-btn.primary{background:#1a8fc7;color:#fff;border-color:#1a8fc7}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px}
+.dtbl td{padding:7px 0;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.dtbl td:first-child{color:#888;width:85px;font-size:11px}
+.dtbl select,.dtbl input[type=date],.dtbl textarea{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;color:#222;width:100%}
+.dvlbl{font-size:12px;font-weight:500;color:#555;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee}
+.fee-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
+.fee-total{background:#f0f8ff;padding:8px;border-radius:4px;margin-top:4px;display:flex;justify-content:space-between;font-weight:600;font-size:13px}
+.next-box{background:#f0f8ff;border:1px solid #85B7EB;border-radius:6px;padding:12px;margin-top:12px}
+.next-box h4{font-size:13px;font-weight:500;color:#1a8fc7;margin-bottom:10px}
+.pg-wrap{flex:1;overflow-y:auto;padding:24px}
+.pg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.pg-title{font-size:17px;font-weight:500;color:#1a8fc7}
+.breadcrumb{font-size:12px;color:#888;margin-bottom:12px}
+.breadcrumb span{color:#1a8fc7;cursor:pointer}.breadcrumb span:hover{text-decoration:underline}
+.data-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd;border-radius:6px;overflow:hidden;font-size:13px}
+.data-table th{background:#f8f8f8;padding:9px 13px;text-align:left;font-weight:500;border-bottom:1px solid #ddd;font-size:12px;color:#555}
+.data-table td{padding:9px 13px;border-bottom:1px solid #eee;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#f8fbff}
+.tlink{color:#1a8fc7;cursor:pointer;text-decoration:underline;font-weight:500}
+.pub-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:500}
+.pub-badge.open{background:#e8f8e8;color:#3B6D11}
+.pub-badge.closed{background:#f0f0f0;color:#888}
+.order-btns{display:flex;flex-direction:column;gap:1px}
+.order-btn{background:none;border:1px solid #ddd;width:18px;height:14px;cursor:pointer;font-size:8px;display:flex;align-items:center;justify-content:center;color:#888}
+.section-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:20px 24px;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:500;margin-bottom:4px}
+.section-desc{font-size:12px;color:#888;margin-bottom:14px}
+.form-row{display:flex;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.form-row:last-child{border-bottom:none}
+.form-row .lbl{width:160px;font-size:13px;color:#555;flex-shrink:0;padding-top:8px}
+.form-row .req{color:#e24b4a;font-size:11px;margin-left:3px}
+.form-row .inp-area{flex:1}
+.fi{padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222}
+.fi-sm{width:120px}.fi-md{width:220px}.fi-lg{width:100%}
+.radio-group{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:6px}
+.radio-group label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+.plan-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.plan-table th{background:#f8f8f8;padding:8px 12px;text-align:left;font-weight:500;border:1px solid #ddd;font-size:12px;color:#555}
+.plan-table td{padding:8px 12px;border:1px solid #eee;vertical-align:middle}
+.add-plan-row{display:flex;gap:8px;align-items:center;margin-top:10px;padding:10px;background:#f8f8f8;border-radius:6px;border:1px dashed #ccc;flex-wrap:wrap}
+.add-plan-row input{padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222}
+.tag-chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;background:#e8f4fb;color:#1a8fc7;border:1px solid #85B7EB}
+.ctag{display:inline-block;border-radius:10px;padding:2px 8px;font-size:11px;margin:1px 2px}
+.ctag.plan{background:#eaf8e8;color:#3B6D11}
+.ctag.tag{background:#e8f4fb;color:#1a8fc7}
+.reg-form{background:#fff;border:1px solid #ddd;border-radius:6px;padding:22px 28px;max-width:680px}
+.form-table{width:100%;border-collapse:collapse}
+.form-table tr td{padding:9px 0;border-bottom:1px solid #f5f5f5;vertical-align:top}
+.form-table td:first-child{width:130px;font-size:13px;color:#555;padding-top:13px}
+.f{padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222}
+.f-sm{width:150px}.f-md{width:240px}.f-lg{width:100%}
+.f-pair{display:flex;gap:8px}.f-pair .f{flex:1}
+.tag-area{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag-opt{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:12px;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#555;user-select:none}
+.tag-opt.sel-tag{background:#e8f4fb;border-color:#1a8fc7;color:#1a8fc7}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.detail-section{background:#fff;border:1px solid #ddd;border-radius:6px;padding:16px 20px;margin-bottom:13px}
+.detail-section h3{font-size:13px;font-weight:500;color:#1a8fc7;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid #eee}
+.info-grid{display:grid;grid-template-columns:120px 1fr 120px 1fr;gap:8px 0}
+.info-grid .lbl{font-size:11px;color:#888;padding:5px 0}
+.info-grid .val{font-size:13px;padding:5px 0;padding-right:10px}
+.item-list{display:grid;gap:10px}
+.item-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.avatar{width:36px;height:36px;border-radius:50%;background:#dbeeff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#0C447C;flex-shrink:0}
+.sm-btn{padding:4px 10px;border:1px solid #ccc;border-radius:4px;cursor:pointer;font-size:11px;background:#fff}
+.sm-btn:hover{background:#f0f0f0}
+.sm-btn.danger{border-color:#e24b4a;color:#e24b4a}
+.search-box{background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 22px;margin-bottom:18px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:#fff;border-radius:8px;width:420px;max-height:90vh;overflow-y:auto;padding:20px}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:13px;padding-bottom:9px;border-bottom:1px solid #eee}
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:12px;color:#666;margin-bottom:3px}
+.fg input,.fg select,.fg textarea{width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222}
+.fg textarea{height:60px;resize:vertical}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}
+.mbtn{padding:7px 15px;border-radius:4px;cursor:pointer;font-size:13px;border:1px solid #ccc;background:#fff}
+.mbtn:hover{background:#f0f0f0}
+.mbtn.primary{background:#1a8fc7;color:#fff;border-color:#1a8fc7}
+.mbtn.danger{background:#e24b4a;color:#fff;border-color:#e24b4a}
+.settings-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px;margin-bottom:14px;max-width:520px}
+.settings-card h3{font-size:14px;font-weight:500;margin-bottom:13px;padding-bottom:7px;border-bottom:1px solid #eee}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;gap:10px}
+.set-row:last-child{border-bottom:none}
+.shift-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.shift-tbl th{background:#f8f8f8;padding:6px 4px;text-align:center;border-bottom:1px solid #ddd;border-right:1px solid #eee;font-size:10px}
+.shift-tbl td{padding:3px;border-bottom:1px solid #eee;border-right:1px solid #eee;text-align:center}
+.shift-cell{cursor:pointer;border-radius:3px;padding:5px 2px;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;min-height:30px;border:1px solid}
+/* サブメニュー用 */
+.sub-nav{background:#e8f4fb;border-bottom:1px solid #b8d8f0;display:flex;padding:0 16px;flex-shrink:0}
+.sub-nav a{padding:8px 14px;font-size:12px;color:#555;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px}
+.sub-nav a:hover{color:#1a8fc7}
+.sub-nav a.active{color:#1a8fc7;font-weight:500;border-bottom-color:#1a8fc7}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <span class="topbar-logo">🏋️ GymPro</span>
+  <nav class="topbar-nav">
+    <a onclick="tab('calendar')" id="nav-calendar">📅 予約カレンダー</a>
+    <a onclick="tab('bksearch')" id="nav-bksearch">🔍 予約検索</a>
+    <a onclick="toggleSubMenu('settings',event)" id="nav-settings" class="has-sub">⚙️ 設定 ▾
+      <div class="sub-menu" id="submenu-settings">
+        <a onclick="subTab('customers');event.stopPropagation()">👤 顧客管理</a>
+        <a onclick="subTab('courses');event.stopPropagation()">📋 コース管理</a>
+        <a onclick="subTab('tags');event.stopPropagation()">🏷️ タグ管理</a>
+        <a onclick="subTab('trainers');event.stopPropagation()">👥 トレーナー管理</a>
+        <a onclick="subTab('shift');event.stopPropagation()">📆 シフト管理</a>
+        <a onclick="subTab('csv');event.stopPropagation()">📊 データ出力</a>
+        <a onclick="subTab('system');event.stopPropagation()">🔧 システム設定</a>
+      </div>
+    </a>
+  </nav>
+</div>
+<div class="main">
+  <!-- CALENDAR -->
+  <div id="tab-calendar" class="page active" style="flex-direction:column">
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div class="sidebar">
+        <div id="mini-cal"></div>
+        <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px">
+          <div style="font-size:10px;color:#888;margin-bottom:5px">凡例</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="width:10px;height:10px;background:#dbeeff;border-left:3px solid #1a8fc7;display:inline-block"></span><span style="font-size:10px">確定</span></div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="width:10px;height:10px;background:#ffe4e4;border-left:3px solid #e24b4a;display:inline-block"></span><span style="font-size:10px">休憩</span></div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="width:10px;height:10px;background:#e4f8e4;border-left:3px solid #4caf50;display:inline-block"></span><span style="font-size:10px">体験</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#fff3d0;border-left:3px solid #f5a623;display:inline-block"></span><span style="font-size:10px">★指名</span></div>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="cal-toolbar">
+          <button class="cal-nav-btn" onclick="moveWeek(-1)">＜</button>
+          <button class="cal-nav-btn" onclick="moveWeek(1)">＞</button>
+          <span class="cal-period" id="cal-period"></span>
+          <button class="cal-today-btn" onclick="goToday()">今週</button>
+          <button class="cal-nav-btn" style="margin-left:4px;background:#e8f8e8;border-color:#4caf50;color:#1a5c1a" onclick="releaseFixedBookings()">🔓 予約解放</button>
+          <button class="cal-nav-btn" onclick="openBkModal(null,null,null)">+ 予約追加</button>
+          <div class="view-toggle">
+            <button class="active" id="vw-week" onclick="setView('week')">週</button>
+            <button id="vw-day" onclick="setView('day')">日</button>
+          </div>
+        </div>
+        <div class="cal-wrap" id="cal-wrap"></div>
+      </div>
+      <div class="side-panel hidden" id="side-panel">
+        <div class="panel-hd"><span class="panel-hd-title" id="panel-title">予約詳細</span><button class="panel-close" onclick="closePanel()">×</button></div>
+        <div class="panel-body" id="panel-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING SEARCH -->
+  <div id="tab-bksearch" class="page" style="flex-direction:column">
+    <div class="pg-wrap">
+      <div class="pg-header"><span class="pg-title">予約検索</span></div>
+      <div class="search-box" style="max-width:860px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="bks-q" class="fi fi-lg" placeholder="氏名・フリガナ・電話番号で検索" oninput="doBkSearch()">
+          <button class="mbtn" onclick="document.getElementById('bks-q').value='';doBkSearch()">クリア</button>
+        </div>
+      </div>
+      <div id="bks-results" style="max-width:1100px"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS GROUP -->
+  <div id="tab-settings" class="page" style="flex-direction:column;overflow:hidden">
+    <div class="sub-nav" id="sub-nav">
+      <a onclick="subTabDirect('customers')" id="subnav-customers">👤 顧客管理</a>
+      <a onclick="subTabDirect('courses')" id="subnav-courses">📋 コース管理</a>
+      <a onclick="subTabDirect('tags')" id="subnav-tags">🏷️ タグ管理</a>
+      <a onclick="subTabDirect('trainers')" id="subnav-trainers">👥 トレーナー管理</a>
+      <a onclick="subTabDirect('shift')" id="subnav-shift">📆 シフト管理</a>
+      <a onclick="subTabDirect('csv')" id="subnav-csv">📊 データ出力</a>
+      <a onclick="subTabDirect('system')" id="subnav-system">🔧 システム設定</a>
+    </div>
+    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div id="subtab-customers" class="page" style="flex-direction:column"><div id="cust-view" style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column"></div></div>
+      <div id="subtab-courses" class="page" style="flex-direction:column"><div id="course-view" style="flex:1;overflow-y:auto;padding:24px"></div></div>
+      <div id="subtab-tags" class="page" style="flex-direction:column;overflow-y:auto">
+        <div style="padding:24px;display:flex;gap:20px;align-items:flex-start">
+          <div style="width:320px;min-width:320px;flex-shrink:0">
+            <div class="pg-header"><span class="pg-title">タグ管理</span><button class="mbtn primary" onclick="openTagModal()">+ タグを追加</button></div>
+            <p style="font-size:12px;color:#888;margin-bottom:12px">タグをクリックすると該当顧客が右に表示されます</p>
+            <div id="tag-mgmt-list" style="display:grid;gap:8px"></div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div id="tag-cust-panel" style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:16px;min-height:200px">
+              <div style="color:#aaa;font-size:13px;text-align:center;padding:40px 0">タグをクリックすると<br>該当する顧客が表示されます</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="subtab-trainers" class="page"><div class="pg-wrap"><div class="pg-header"><span class="pg-title">トレーナー管理</span><button class="mbtn primary" onclick="openTrModal()">+ トレーナーを追加</button></div><div class="item-list" id="trainer-list"></div></div></div>
+      <div id="subtab-shift" class="page" style="flex-direction:column;overflow:hidden">
+        <div style="background:#fff;border-bottom:1px solid #ddd;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <button class="cal-nav-btn" onclick="shiftMonthMove(-1)">＜</button>
+          <button class="cal-nav-btn" onclick="shiftMonthMove(1)">＞</button>
+          <span id="shift-month-label" style="font-size:15px;font-weight:500;min-width:120px"></span>
+          <button class="cal-today-btn" onclick="shiftMonthReset()">今月</button>
+          <div style="margin-left:auto"><button class="cal-nav-btn" onclick="downloadShiftMonthCSV()">📥 CSV出力</button></div>
+        </div>
+        <div style="flex:1;overflow:auto"><div id="shift-month-table"></div></div>
+      </div>
+      <div id="subtab-csv" class="page" style="flex-direction:column"><div class="pg-wrap" id="csv-content"></div></div>
+      <div id="subtab-system" class="page"><div class="pg-wrap" id="settings-content"></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 予約モーダル -->
+<div class="modal-bg" id="bk-modal" style="display:none;align-items:flex-start;padding-top:40px">
+  <div class="modal" style="width:520px;max-height:85vh">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #eee">
+      <h3 style="margin:0;border:none;padding:0">新規予約登録</h3>
+      <button onclick="closeBkModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888">×</button>
+    </div>
+    <div id="bk-step1">
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;color:#555;text-align:right">スタッフ</span>
+        <span id="bk-s1-trainer" style="font-size:13px;font-weight:500"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;color:#555;text-align:right">予約メニュー <span style="color:#e24b4a">●</span></span>
+        <select id="bk-s1-course" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-bottom:18px">
+        <span style="font-size:13px;color:#555;text-align:right">利用開始日時 <span style="color:#e24b4a">●</span></span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="date" id="bk-s1-date" style="padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+          <select id="bk-s1-hour" style="padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222"></select>時
+          <select id="bk-s1-min" style="padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222"><option value="00">00</option><option value="30">30</option></select>分
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center">
+        <button class="mbtn primary" style="width:200px;padding:10px" onclick="goStep2()">予約登録に進む</button>
+      </div>
+    </div>
+    <div id="bk-step2" style="display:none">
+      <div style="background:#f0f8ff;border-radius:4px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1a8fc7"><strong id="bk-s2-summary"></strong></div>
+      <div style="background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:500;color:#555;margin-bottom:8px">顧客検索</div>
+        <input id="bk-cust-search" placeholder="氏名・フリガナ・電話番号で検索" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222" oninput="searchCusts()">
+        <div id="bk-cust-results" style="margin-top:8px;max-height:130px;overflow-y:auto"></div>
+        <div id="bk-selected-cust" style="margin-top:6px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:10px 8px;align-items:center">
+        <span style="font-size:13px;color:#555;text-align:right">フリガナ（姓）<span style="color:#e24b4a">●</span></span>
+        <input id="bk-kana1" placeholder="アオゾラ" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+        <span style="font-size:13px;color:#555;text-align:right">フリガナ（名）</span>
+        <input id="bk-kana2" placeholder="タロウ" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+        <span style="font-size:13px;color:#555;text-align:right">名前（姓）</span>
+        <input id="bk-name1" placeholder="青空" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+        <span style="font-size:13px;color:#555;text-align:right">名前（名）</span>
+        <input id="bk-name2" placeholder="太郎" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+        <span style="font-size:13px;color:#555;text-align:right">電話番号</span>
+        <input id="bk-phone" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+        <span style="font-size:13px;color:#555;text-align:right">ステータス</span>
+        <select id="bk-status" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;color:#222">
+          <option value="confirmed">予約確定</option><option value="trial">体験</option><option value="rest">休憩</option>
+        </select>
+        <span style="font-size:13px;color:#555;text-align:right">メモ</span>
+        <textarea id="bk-memo" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;height:55px;resize:vertical;background:#fff;color:#222"></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px">
+        <button class="mbtn" onclick="backStep1()">← 戻る</button>
+        <button class="mbtn primary" onclick="saveBk()">登録する</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="tag-modal" style="display:none">
+  <div class="modal">
+    <h3 id="tag-modal-title">タグを追加</h3>
+    <div class="fg"><label>タグ名</label><input id="tag-name"></div>
+    <div class="fg"><label>説明（任意）</label><input id="tag-desc"></div>
+    <div class="modal-actions">
+      <button class="mbtn danger" id="tag-del-btn" style="display:none" onclick="deleteTag()">削除</button>
+      <button class="mbtn" onclick="closeTagModal()">キャンセル</button>
+      <button class="mbtn primary" onclick="saveTag()">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="tr-modal" style="display:none">
+  <div class="modal">
+    <h3 id="tr-modal-title">トレーナーを追加</h3>
+    <div class="fg"><label>氏名</label><input id="tr-name"></div>
+    <div class="fg"><label>担当・資格</label><input id="tr-role"></div>
+    <div class="fg"><label>指名料（円）</label><input type="number" id="tr-nom-fee" min="0" placeholder="例：1100"></div>
+    <div class="fg"><label>優先順位</label><input type="number" id="tr-priority" min="1" placeholder="例：1"><div style="font-size:11px;color:#888;margin-top:4px">数字が小さいほど優先</div></div>
+    <div class="modal-actions">
+      <button class="mbtn danger" id="tr-del-btn" style="display:none" onclick="deleteTr()">削除</button>
+      <button class="mbtn" onclick="closeTrModal()">キャンセル</button>
+      <button class="mbtn primary" onclick="saveTr()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const HOLIDAYS=['2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-07-20','2026-08-11','2026-09-21','2026-09-23','2026-10-12','2026-11-03','2026-11-23'];
+const WDAYS=['月','火','水','木','金','土','日'];
+const TODAY=new Date().toISOString().split('T')[0];
+const SHIFT_TYPES={work:{label:'出勤',bg:'#e8f8e8',bc:'#4caf50',color:'#1a5c1a'},off:{label:'休日',bg:'#ffe4e4',bc:'#e24b4a',color:'#8a1a1a'},paid:{label:'有給',bg:'#fff3d0',bc:'#f5a623',color:'#6b3d00'},annual:{label:'年休',bg:'#ede8ff',bc:'#7c3aed',color:'#3b1a8a'}};
+const DAY_NAMES=['月','火','水','木','金','土','日'];
+function WJAP(d){return['日','月','火','水','木','金','土'][d]}
+
+const S={
+  weekOffset:0,view:'week',miniOff:0,
+  editTrId:null,editTagId:null,
+  custView:'list',editCustId:null,
+  courseView:'list',editCourseId:null,
+  _selectedTagId:null,
+  currentSubTab:'customers',
+  settings:{
+    dayHours:{0:{open:9,close:21},1:{open:9,close:21},2:{open:9,close:21},3:{open:9,close:21},4:{open:9,close:21},5:{open:9,close:19},6:{open:9,close:19}},
+    holidayOpen:true,holidayOpen2:9,holidayClose:19
+  },
+  trainers:[
+    {id:1,name:'松原',role:'NSCA-CPT',nomFee:1100,priority:1},
+    {id:2,name:'日比野',role:'日本スポーツ協会',nomFee:1100,priority:2},
+    {id:3,name:'近藤',role:'JATI-ATI',nomFee:1100,priority:3},
+  ],
+  tags:[{id:1,name:'パーソナル会員',desc:''},{id:2,name:'アフタヌーン会員',desc:''},{id:3,name:'体験済み',desc:''},{id:4,name:'継続中',desc:''}],
+  courses:[
+    {id:1,name:'パーソナルトレーニング',catchcopy:'',desc:'',dur:60,startUnit:30,price:null,priceType:'none',status:'open',acceptStart:'2026-04-01',acceptEnd:'2026-05-31',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:[1,2,3],timeRestrict:false,timeOpenStr:'09:00',timeCloseStr:'21:00',plans:[{id:101,name:'月2回',times:2,price:17600},{id:102,name:'月4回',times:4,price:33000},{id:103,name:'月6回',times:6,price:46200},{id:104,name:'月8回',times:8,price:57200}]},
+    {id:2,name:'アフタヌーン パーソナルトレーニング',catchcopy:'',desc:'',dur:60,startUnit:30,price:null,priceType:'none',status:'open',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:[1,2,3],timeRestrict:true,timeOpenStr:'13:00',timeCloseStr:'16:30',plans:[{id:201,name:'月2回',times:2,price:14800},{id:202,name:'月4回',times:4,price:26400},{id:203,name:'月6回',times:6,price:36300},{id:204,name:'月8回',times:8,price:44000}]},
+    {id:3,name:'体験レッスン',catchcopy:'',desc:'',dur:90,startUnit:30,price:7700,priceType:'fixed',status:'open',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:[1,2,3],timeRestrict:false,timeOpenStr:'09:00',timeCloseStr:'21:00',plans:[]},
+    {id:4,name:'ペア体験レッスン',catchcopy:'',desc:'',dur:90,startUnit:30,price:11000,priceType:'fixed',status:'open',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:[1,2,3],timeRestrict:false,timeOpenStr:'09:00',timeCloseStr:'21:00',plans:[]},
+    {id:5,name:'休憩',catchcopy:'',desc:'',dur:60,startUnit:30,price:null,priceType:'none',status:'closed',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:[1,2,3],timeRestrict:false,timeOpenStr:'09:00',timeCloseStr:'21:00',plans:[]},
+  ],
+  customers:[
+    {id:1,kana1:'ヤマダ',kana2:'タロウ',name1:'山田',name2:'太郎',phone:'090-1111-2222',phone2:'',email:'yamada@example.com',email2:'',custNo:'C0001',gender:'男性',birth:'1985-03-15',pref:'東京都',addr:'千代田区丸の内1-1-1',memo:'',nominatedTrainerId:1,contractIds:[{cid:1,pid:104}],tagIds:[1,4],fixedBookings:[{id:'f1',type:'weekly',dow:1,time:'11:00',holidayAction:'skip'}]},
+    {id:2,kana1:'スズキ',kana2:'ハナコ',name1:'鈴木',name2:'花子',phone:'090-2222-3333',phone2:'',email:'suzuki@example.com',email2:'',custNo:'C0002',gender:'女性',birth:'1992-07-20',pref:'東京都',addr:'渋谷区神南1-2-3',memo:'',nominatedTrainerId:null,contractIds:[{cid:2,pid:202}],tagIds:[2],fixedBookings:[]},
+    {id:3,kana1:'タナカ',kana2:'ケンイチ',name1:'田中',name2:'健一',phone:'090-3333-4444',phone2:'',email:'tanaka@example.com',email2:'',custNo:'C0003',gender:'男性',birth:'1978-11-30',pref:'神奈川県',addr:'横浜市西区みなとみらい1-1',memo:'',nominatedTrainerId:3,contractIds:[{cid:3,pid:null}],tagIds:[3,4],fixedBookings:[]},
+  ],
+  bookings:[
+    {id:1,name:'山本明',name1:'山本',name2:'明',kana1:'ヤマモト',kana2:'アキラ',phone:'090-1111-2222',trainerId:1,courseId:1,date:'2026-04-28',time:'11:00',status:'confirmed',memo:'',nominatedTrainerId:1},
+    {id:2,name:'周喚',name1:'周',name2:'喚',kana1:'シュウ',kana2:'カン',phone:'',trainerId:2,courseId:1,date:'2026-04-28',time:'11:00',status:'confirmed',memo:'',nominatedTrainerId:null},
+    {id:3,name:'大西純',name1:'大西',name2:'純',kana1:'オオニシ',kana2:'ジュン',phone:'',trainerId:3,courseId:1,date:'2026-04-28',time:'11:00',status:'confirmed',memo:'',nominatedTrainerId:3},
+    {id:4,name:'水谷恵',name1:'水谷',name2:'恵',kana1:'ミズタニ',kana2:'メグミ',phone:'',trainerId:1,courseId:2,date:'2026-04-28',time:'12:00',status:'confirmed',memo:'',nominatedTrainerId:null},
+    {id:5,name:'休憩',name1:'休憩',name2:'',kana1:'',kana2:'',phone:'',trainerId:2,courseId:5,date:'2026-04-28',time:'12:00',status:'rest',memo:'',nominatedTrainerId:null},
+    {id:6,name:'馬渕大',name1:'馬渕',name2:'大',kana1:'マブチ',kana2:'ダイ',phone:'',trainerId:1,courseId:1,date:'2026-04-28',time:'13:00',status:'confirmed',memo:'',nominatedTrainerId:null},
+    {id:7,name:'田中健一',name1:'田中',name2:'健一',kana1:'タナカ',kana2:'ケンイチ',phone:'',trainerId:2,courseId:2,date:'2026-04-29',time:'14:30',status:'confirmed',memo:'',nominatedTrainerId:null},
+    {id:8,name:'鈴木花子',name1:'鈴木',name2:'花子',kana1:'スズキ',kana2:'ハナコ',phone:'',trainerId:1,courseId:1,date:'2026-04-30',time:'10:30',status:'confirmed',memo:'',nominatedTrainerId:1},
+    {id:9,name:'体験',name1:'体験',name2:'',kana1:'',kana2:'',phone:'',trainerId:3,courseId:3,date:'2026-04-29',time:'12:00',status:'trial',memo:'',nominatedTrainerId:null},
+  ],
+  shifts:[
+    {id:1,trainerId:1,date:'2026-04-29',type:'off'},
+    {id:2,trainerId:2,date:'2026-05-01',type:'off'},
+    {id:3,trainerId:3,date:'2026-04-30',type:'paid'},
+  ],
+};
+let nid=700;
+
+function fmt(d){return d.toISOString().split('T')[0]}
+function getWeekDates(off){const d=new Date();d.setDate(d.getDate()-d.getDay()+1+off*7);return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return x})}
+function getCourse(id){return S.courses.find(c=>c.id===id)}
+function getTrainer(id){return S.trainers.find(t=>t.id===id)}
+function getPlan(cs,pid){return cs?.plans?.find(p=>p.id===pid)}
+function getTag(id){return S.tags.find(t=>t.id===id)}
+function getShift(tId,date){return S.shifts.find(s=>s.trainerId===tId&&s.date===date)}
+function isHoliday(ds){return HOLIDAYS.includes(ds)}
+function getDayHours(ds){
+  const dow=(new Date(ds).getDay()+6)%7;
+  if(isHoliday(ds)){if(!S.settings.holidayOpen)return null;return{open:S.settings.holidayOpen2||9,close:S.settings.holidayClose||19}}
+  return S.settings.dayHours[dow]||null;
+}
+function getTimes(ds){
+  const h=ds?getDayHours(ds):null;
+  const open=h?h.open:9,close=h?h.close:21;
+  const r=[];for(let i=open;i<close;i++){r.push(`${String(i).padStart(2,'0')}:00`);r.push(`${String(i).padStart(2,'0')}:30`)}
+  return r;
+}
+function toast(msg,color='#3B6D11'){
+  const n=document.createElement('div');
+  n.style.cssText=`position:fixed;top:60px;right:20px;background:${color};color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;z-index:999`;
+  n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),2500);
+}
+
+// ===== TAB & SUB-TAB =====
+function tab(t){
+  document.querySelectorAll('.topbar-nav>a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('nav-'+t)?.classList.add('active');
+  // settingsグループ以外
+  if(t==='calendar'||t==='bksearch'){
+    document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+    const el=document.getElementById('tab-'+t);if(el){el.style.display='flex'}
+  } else {
+    document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+    document.getElementById('tab-settings').style.display='flex';
+  }
+  closeAllSubMenus();
+  if(t==='calendar')renderCal();
+  else if(t==='bksearch')renderBkSearch();
+}
+function toggleSubMenu(name,e){
+  e.stopPropagation();
+  const menu=document.getElementById('submenu-'+name);
+  const isOpen=menu.classList.contains('open');
+  closeAllSubMenus();
+  if(!isOpen)menu.classList.add('open');
+}
+function closeAllSubMenus(){document.querySelectorAll('.sub-menu').forEach(m=>m.classList.remove('open'))}
+document.addEventListener('click',closeAllSubMenus);
+
+function subTab(name){
+  // トップナビ → 設定グループを開いてサブタブへ
+  document.querySelectorAll('.topbar-nav>a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('nav-settings')?.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.getElementById('tab-settings').style.display='flex';
+  closeAllSubMenus();
+  subTabDirect(name);
+}
+function subTabDirect(name){
+  S.currentSubTab=name;
+  document.querySelectorAll('.sub-nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('subnav-'+name)?.classList.add('active');
+  // subtab pages
+  ['customers','courses','tags','trainers','shift','csv','system'].forEach(n=>{
+    const el=document.getElementById('subtab-'+n);
+    if(el)el.style.display=n===name?'flex':'none';
+  });
+  const renders={customers:renderCustView,courses:renderCourseView,tags:renderTagMgmt,trainers:renderTrainers,shift:renderShiftMonth,csv:renderCsvPage,system:renderSettings};
+  renders[name]?.();
+}
+
+// ===== MINI CAL =====
+function renderMiniCal(){
+  const base=new Date();base.setMonth(base.getMonth()+S.miniOff);
+  const y=base.getFullYear(),m=base.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),sd=(first.getDay()+6)%7;
+  let h=`<div class="mc-header"><button class="mc-btn" onclick="S.miniOff--;renderMiniCal()">＜</button><span class="mc-title">${y}年${m+1}月</span><button class="mc-btn" onclick="S.miniOff++;renderMiniCal()">＞</button></div><div class="mc-grid">`;
+  ['月','火','水','木','金','土','日'].forEach((d,i)=>h+=`<div class="mc-dh" style="${i===5?'color:#1a8fc7':i===6?'color:#e24b4a':''}">${d}</div>`);
+  for(let i=0;i<sd;i++)h+=`<div class="mc-d om"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=(sd+d-1)%7;
+    h+=`<div class="mc-d${ds===TODAY?' today-mc':dow===5?' sat':dow===6?' sun':''}" onclick="jumpDate('${ds}')">${d}</div>`;
+  }
+  document.getElementById('mini-cal').innerHTML=h+`</div>`;
+}
+function jumpDate(ds){const d=new Date(ds),b=new Date();b.setDate(b.getDate()-b.getDay()+1);S.weekOffset=Math.round((d-b)/(7*86400000));renderCal()}
+
+// ===== CALENDAR =====
+function moveWeek(n){S.weekOffset+=n;renderCal()}
+function goToday(){S.weekOffset=0;renderCal()}
+function setView(v){S.view=v;document.getElementById('vw-week').className=v==='week'?'active':'';document.getElementById('vw-day').className=v==='day'?'active':'';renderCal()}
+
+function renderCal(){
+  renderMiniCal();
+  const all=getWeekDates(S.weekOffset);
+  const disp=S.view==='week'?all:[all[0]];
+  const d0=all[0],d6=all[6];
+  document.getElementById('cal-period').textContent=`${d0.getFullYear()} ${d0.getMonth()+1}/${d0.getDate()}(${WDAYS[(d0.getDay()+6)%7]}) ～ ${d6.getMonth()+1}/${d6.getDate()}(${WDAYS[(d6.getDay()+6)%7]})`;
+  const trs=S.trainers;
+  const times=getTimes(fmt(disp[0]))||[];
+  let h=`<table style="border-collapse:separate;border-spacing:0;width:100%;min-width:${52+disp.length*trs.length*100}px;table-layout:fixed">`;
+  h+=`<tr><th style="width:52px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:30"></th>`;
+  disp.forEach(d=>{
+    const ds=fmt(d),it=ds===TODAY,dow=(d.getDay()+6)%7,isH=isHoliday(ds);
+    const col=dow===5?'#1a8fc7':isH||dow===6?'#e24b4a':'inherit';
+    h+=`<th colspan="${trs.length}" style="background:${it?'#e8f4fb':'#f8f8f8'};border-bottom:1px solid #ddd;border-left:1px solid #ddd;text-align:center;padding:6px 4px;position:sticky;top:0;z-index:10">
+      <div style="font-size:18px;font-weight:500;color:${col}">${d.getMonth()+1}/${d.getDate()}${isH?'<sup style="font-size:9px">祝</sup>':''}</div>
+      <div style="font-size:11px;color:${col==='inherit'?'#888':col}">${WDAYS[dow]}</div></th>`;
+  });
+  h+=`</tr><tr><th style="width:52px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:30"></th>`;
+  disp.forEach(()=>trs.forEach(tr=>{h+=`<th style="background:#f0f7ff;border-bottom:1px solid #ddd;border-left:1px solid #ddd;text-align:center;font-size:12px;font-weight:500;padding:5px 2px;position:sticky;top:0;z-index:9">${tr.name}</th>`}));
+  h+=`</tr>`;
+  times.forEach(t=>{
+    const isHalf=t.endsWith(':30');
+    const border=isHalf?'1px solid #bbb':'1px dotted #e0e0e0';
+    h+=`<tr><td style="width:52px;text-align:right;padding:2px 6px 0;font-size:11px;color:${isHalf?'transparent':'#888'};border-bottom:${border};border-right:1px solid #ddd;background:#fff;vertical-align:top;height:${isHalf?42:52}px">${isHalf?'':t}</td>`;
+    disp.forEach(d=>{
+      const ds=fmt(d);
+      trs.forEach(tr=>{
+        const bks=S.bookings.filter(b=>b.date===ds&&b.time===t&&b.trainerId===tr.id&&b.status!=='cancelled');
+        const shift=getShift(tr.id,ds);
+        const blocked=shift?.type==='off'||shift?.type==='paid'||shift?.type==='annual';
+        const bg=blocked?'repeating-linear-gradient(45deg,#f5f5f5,#f5f5f5 5px,#e8e8e8 5px,#e8e8e8 10px)':ds===TODAY?'rgba(26,143,199,0.03)':'#fff';
+        h+=`<td style="border-left:1px solid #eee;border-bottom:${border};padding:1px;vertical-align:top;height:${isHalf?42:52}px;overflow:hidden;background:${bg};cursor:${blocked?'default':'pointer'}" ${!blocked?`onclick="openBkModal('${ds}','${t}',${tr.id})"`:''}>`;
+        if(blocked&&!bks.length&&!isHalf){const sh=getShift(tr.id,ds);h+=`<div style="font-size:9px;color:#bbb;padding:4px;text-align:center">${{off:'休日',paid:'有給',annual:'年休'}[sh?.type]||''}</div>`}
+        bks.forEach(b=>{
+          const cs=getCourse(b.courseId),isNom=!!b.nominatedTrainerId;
+          const cls=isNom?'nominated':{confirmed:'confirmed',rest:'rest',trial:'trial'}[b.status]||'confirmed';
+          const bc=isNom?'n':{confirmed:'c',rest:'r',trial:'t'}[b.status]||'c';
+          const lbl={confirmed:'確',rest:'休',trial:'体'}[b.status];
+          h+=`<div class="bk-block ${cls}" onclick="event.stopPropagation();showPanel(${b.id})">
+            <div class="bk-name"><span class="bk-badge ${bc}">${lbl}</span>${b.name}${isNom?'★':''}</div>
+            <div class="bk-course">${cs?.name||''}</div></div>`;
+        });
+        h+=`</td>`;
+      });
+    });
+    h+=`</tr>`;
+  });
+  h+=`</table>`;
+  document.getElementById('cal-wrap').innerHTML=h;
+}
+
+// ===== PANEL =====
+function showPanel(id){
+  const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  const cs=getCourse(b.courseId),pl=getPlan(cs,b.planId),nomTr=b.nominatedTrainerId?getTrainer(b.nominatedTrainerId):null;
+  const basePrice=cs?.price||pl?.price||0,nomFee=nomTr?.nomFee||0,total=basePrice+nomFee;
+  const times=getTimes(b.date);
+  const timeOpts=times.map(t=>`<option${t===b.time?' selected':''}>${t}</option>`).join('');
+  const trOpts=S.trainers.map(t=>`<option value="${t.id}"${t.id===b.trainerId?' selected':''}>${t.name}</option>`).join('');
+  const nomOpts=`<option value="">指名なし</option>`+S.trainers.map(t=>`<option value="${t.id}"${b.nominatedTrainerId===t.id?' selected':''}>${t.name}（+¥${(t.nomFee||0).toLocaleString()}）</option>`).join('');
+  const stOpts=[['confirmed','予約確定'],['trial','体験'],['rest','休憩'],['cancelled','キャンセル済み']].map(([v,l])=>`<option value="${v}"${b.status===v?' selected':''}>${l}</option>`).join('');
+  document.getElementById('panel-title').textContent=b.name+(b.nominatedTrainerId?' ★':'');
+  document.getElementById('panel-body').innerHTML=`
+    <div class="pnl-actions">
+      <button class="pnl-btn danger" onclick="cancelBk(${id})">キャンセル</button>
+      <button class="pnl-btn primary" onclick="savePanelChanges(${id})">変更を保存</button>
+    </div>
+    <div class="dvlbl">予約内容</div>
+    <table class="dtbl">
+      <tr><td>ステータス</td><td><select id="pnl-status">${stOpts}</select></td></tr>
+      <tr><td>日付</td><td><input type="date" id="pnl-date" value="${b.date}"></td></tr>
+      <tr><td>開始時間</td><td><select id="pnl-time">${timeOpts}</select></td></tr>
+      <tr><td>トレーナー</td><td><select id="pnl-trainer">${trOpts}</select></td></tr>
+      <tr><td>指名</td><td><select id="pnl-nom" onchange="updatePanelFee(${id})">${nomOpts}</select></td></tr>
+      <tr><td>コース</td><td>${cs?.name||'—'}</td></tr>
+      <tr><td>お客様名</td><td>${b.name}</td></tr>
+      <tr><td>電話番号</td><td>${b.phone||'—'}</td></tr>
+      <tr><td>メモ</td><td><textarea id="pnl-memo">${b.memo||''}</textarea></td></tr>
+    </table>
+    <div class="dvlbl">料金明細</div>
+    <div id="pnl-fee">${feeHtml(basePrice,nomFee,total)}</div>
+    <div class="next-box">
+      <h4>📅 次回予約を取る</h4>
+      <div style="display:grid;grid-template-columns:65px 1fr;gap:8px;align-items:center;font-size:12px">
+        <span style="color:#555">お客様</span><span style="font-weight:500">${b.name}</span>
+        <span style="color:#555">コース</span>
+        <select id="next-course" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;width:100%">${S.courses.map(c=>`<option value="${c.id}"${c.id===b.courseId?' selected':''}>${c.name}</option>`).join('')}</select>
+        <span style="color:#555">日付</span>
+        <input type="date" id="next-date" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;width:100%">
+        <span style="color:#555">時間</span>
+        <select id="next-time" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;width:100%">${timeOpts}</select>
+        <span style="color:#555">トレーナー</span>
+        <select id="next-trainer" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;width:100%">${S.trainers.map(t=>`<option value="${t.id}"${t.id===b.trainerId?' selected':''}>${t.name}</option>`).join('')}</select>
+      </div>
+      <button class="mbtn primary" style="width:100%;margin-top:10px;padding:8px" onclick="saveNextBk(${id})">次回予約を登録する</button>
+    </div>`;
+  document.getElementById('side-panel').classList.remove('hidden');
+}
+function feeHtml(base,nom,total){return`<div class="fee-row"><span>コース料金</span><span>${base?'¥'+base.toLocaleString():'—'}</span></div>${nom?`<div class="fee-row"><span>指名料</span><span>¥${nom.toLocaleString()}</span></div>`:''}<div class="fee-total"><span>合計（税込）</span><span style="color:#1a8fc7">¥${total?total.toLocaleString():'—'}</span></div>`}
+function updatePanelFee(id){
+  const b=S.bookings.find(x=>x.id===id),cs=getCourse(b.courseId),pl=getPlan(cs,b.planId);
+  const nomTrId=parseInt(document.getElementById('pnl-nom').value)||0;
+  const base=cs?.price||pl?.price||0,nom=nomTrId?getTrainer(nomTrId)?.nomFee||0:0;
+  document.getElementById('pnl-fee').innerHTML=feeHtml(base,nom,base+nom);
+}
+function savePanelChanges(id){
+  const b=S.bookings.find(x=>x.id===id);
+  b.date=document.getElementById('pnl-date').value;b.time=document.getElementById('pnl-time').value;
+  b.trainerId=parseInt(document.getElementById('pnl-trainer').value);b.status=document.getElementById('pnl-status').value;
+  b.nominatedTrainerId=parseInt(document.getElementById('pnl-nom').value)||null;b.memo=document.getElementById('pnl-memo').value;
+  renderCal();showPanel(id);toast('✓ 変更を保存しました');
+}
+function cancelBk(id){const numId=Number(id);S.bookings=S.bookings.filter(x=>x.id!==numId);closePanel();renderCal();toast('✓ 予約を削除しました','#e24b4a')}
+function saveNextBk(srcId){
+  const src=S.bookings.find(x=>x.id===srcId);
+  const date=document.getElementById('next-date').value;if(!date)return alert('次回の日付を入力してください');
+  S.bookings.push({id:nid++,name:src.name,name1:src.name1,name2:src.name2,kana1:src.kana1,kana2:src.kana2,phone:src.phone,trainerId:parseInt(document.getElementById('next-trainer').value),courseId:parseInt(document.getElementById('next-course').value),date,time:document.getElementById('next-time').value,status:'confirmed',memo:'',nominatedTrainerId:src.nominatedTrainerId||null});
+  closePanel();renderCal();toast('✓ 次回予約を登録しました','#1a8fc7');
+}
+function closePanel(){document.getElementById('side-panel').classList.add('hidden')}
+
+// ===== BOOKING MODAL =====
+let _bkCtx={trainerId:null,date:null,time:null,courseId:null};
+function openBkModal(date,time,trId){
+  const tr=getTrainer(trId||S.trainers[0]?.id);
+  _bkCtx={trainerId:tr?.id,date:date||TODAY,time:time||getTimes(date||TODAY)[0]||'09:00',courseId:null};
+  document.getElementById('bk-s1-trainer').textContent=tr?.name||'';
+  document.getElementById('bk-s1-course').innerHTML=`<option value="">選択してください</option>`+S.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('bk-s1-date').value=_bkCtx.date;
+  document.getElementById('bk-s1-hour').innerHTML=Array.from({length:24},(_,i)=>`<option${i===parseInt(_bkCtx.time)?' selected':''}>${String(i).padStart(2,'0')}</option>`).join('');
+  const mVal=(_bkCtx.time||'').split(':')[1]||'00';
+  [...document.getElementById('bk-s1-min').options].forEach(o=>o.selected=o.value===mVal);
+  document.getElementById('bk-step1').style.display='block';document.getElementById('bk-step2').style.display='none';
+  ['bk-kana1','bk-kana2','bk-name1','bk-name2','bk-phone','bk-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bk-modal').style.display='flex';
+}
+function goStep2(){
+  const cid=parseInt(document.getElementById('bk-s1-course').value);if(!cid)return alert('予約メニューを選択してください');
+  _bkCtx.courseId=cid;_bkCtx.date=document.getElementById('bk-s1-date').value;
+  _bkCtx.time=`${document.getElementById('bk-s1-hour').value}:${document.getElementById('bk-s1-min').value}`;
+  document.getElementById('bk-s2-summary').textContent=`${getCourse(cid)?.name||''} ｜ ${_bkCtx.date} ${_bkCtx.time}〜 ｜ ${getTrainer(_bkCtx.trainerId)?.name||''}`;
+  document.getElementById('bk-cust-search').value='';document.getElementById('bk-cust-results').innerHTML='';document.getElementById('bk-selected-cust').innerHTML='';
+  document.getElementById('bk-step1').style.display='none';document.getElementById('bk-step2').style.display='block';
+}
+function backStep1(){document.getElementById('bk-step1').style.display='block';document.getElementById('bk-step2').style.display='none'}
+function closeBkModal(){document.getElementById('bk-modal').style.display='none'}
+function searchCusts(){
+  const q=(document.getElementById('bk-cust-search').value||'').trim();
+  const res=document.getElementById('bk-cust-results');if(!q){res.innerHTML='';return}
+  const hits=S.customers.filter(c=>[c.kana1,c.kana2,c.name1,c.name2,c.kana1+c.kana2,c.name1+c.name2,c.phone,c.custNo,c.email].join(' ').toLowerCase().includes(q.toLowerCase()));
+  if(!hits.length){res.innerHTML=`<p style="font-size:12px;color:#888;padding:6px 0">該当なし</p>`;return}
+  res.innerHTML=`<div style="border:1px solid #ddd;border-radius:4px;overflow:hidden">`+hits.map(c=>`<div onclick="selectCust(${c.id})" style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #eee;font-size:12px;background:#fff" onmouseover="this.style.background='#e8f4fb'" onmouseout="this.style.background='#fff'"><strong>${c.name1} ${c.name2}</strong> <span style="color:#888">${c.kana1} ${c.kana2}</span><span style="float:right;color:#1a8fc7">${c.phone}</span></div>`).join('')+`</div>`;
+}
+function selectCust(id){
+  const c=S.customers.find(x=>x.id===id);
+  ['kana1','kana2','name1','name2','phone'].forEach(k=>document.getElementById('bk-'+k).value=c[k]||'');
+  document.getElementById('bk-cust-results').innerHTML='';document.getElementById('bk-cust-search').value='';
+  document.getElementById('bk-selected-cust').innerHTML=`<div style="background:#eaf8e8;border:1px solid #97C459;border-radius:4px;padding:6px 10px;font-size:12px;color:#3B6D11;display:flex;align-items:center;justify-content:space-between"><span>✓ ${c.name1} ${c.name2}を選択中</span><button onclick="clearSelCust()" style="background:none;border:none;cursor:pointer;color:#888;font-size:14px">×</button></div>`;
+}
+function clearSelCust(){['bk-kana1','bk-kana2','bk-name1','bk-name2','bk-phone'].forEach(id=>document.getElementById(id).value='');document.getElementById('bk-selected-cust').innerHTML=''}
+function saveBk(){
+  const k1=document.getElementById('bk-kana1').value.trim();if(!k1)return alert('フリガナ（姓）を入力してください');
+  const n1=document.getElementById('bk-name1').value||k1,n2=document.getElementById('bk-name2').value||'';
+  S.bookings.push({id:nid++,name:n1+(n2?' '+n2:''),name1:n1,name2:n2,kana1:k1,kana2:document.getElementById('bk-kana2').value,phone:document.getElementById('bk-phone').value,trainerId:_bkCtx.trainerId,courseId:_bkCtx.courseId,date:_bkCtx.date,time:_bkCtx.time,status:document.getElementById('bk-status').value,memo:document.getElementById('bk-memo').value,nominatedTrainerId:null});
+  closeBkModal();renderCal();
+}
+
+// ===== 固定予約 =====
+function fixedBkRow(fb,fi){
+  const typeOpts=[['weekly','毎週'],['1st','第1'],['2nd','第2'],['3rd','第3'],['4th','第4']].map(([v,l])=>`<option value="${v}"${fb.type===v?' selected':''}>${l}</option>`).join('');
+  const dowOpts=['月','火','水','木','金','土','日'].map((d,i)=>`<option value="${i}"${fb.dow===i?' selected':''}>${d}曜</option>`).join('');
+  const timeOpts=[];for(let h=6;h<23;h++){timeOpts.push(`<option value="${String(h).padStart(2,'0')}:00"${fb.time===`${String(h).padStart(2,'0')}:00`?' selected':''}>${h}:00</option>`);timeOpts.push(`<option value="${String(h).padStart(2,'0')}:30"${fb.time===`${String(h).padStart(2,'0')}:30`?' selected':''}>${h}:30</option>`)}
+  const holOpts=[['skip','スキップ'],['keep','通常通り取る']].map(([v,l])=>`<option value="${v}"${fb.holidayAction===v?' selected':''}>${l}</option>`).join('');
+  return`<div style="border:1px solid #ddd;border-radius:6px;padding:10px;background:#f9f9f9" data-fi="${fi}">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select class="f" style="width:auto;font-size:12px" onchange="updateFixedBk(${fi},'type',this.value)">${typeOpts}</select>
+      <select class="f" style="width:auto;font-size:12px" onchange="updateFixedBk(${fi},'dow',parseInt(this.value))">${dowOpts}</select>
+      <select class="f" style="width:auto;font-size:12px" onchange="updateFixedBk(${fi},'time',this.value)">${timeOpts}</select>
+      <span style="font-size:12px;color:#888">祝日：</span>
+      <select class="f" style="width:auto;font-size:12px" onchange="updateFixedBk(${fi},'holidayAction',this.value)">${holOpts}</select>
+      <button class="sm-btn danger" onclick="removeFixedBk(${fi})">削除</button>
+    </div>
+  </div>`;
+}
+function addFixedBkRow(){
+  window._tmpFixedBks.push({id:'f'+nid++,type:'weekly',dow:1,time:'11:00',holidayAction:'skip'});
+  document.getElementById('fixed-bk-list').innerHTML=window._tmpFixedBks.map((fb,fi)=>fixedBkRow(fb,fi)).join('');
+}
+function updateFixedBk(fi,key,val){if(window._tmpFixedBks[fi])window._tmpFixedBks[fi][key]=val}
+function removeFixedBk(fi){window._tmpFixedBks.splice(fi,1);document.getElementById('fixed-bk-list').innerHTML=window._tmpFixedBks.map((fb,fi)=>fixedBkRow(fb,fi)).join('')}
+
+// ===== 予約解放 =====
+function releaseFixedBookings(){
+  const now=new Date(),nextMonth=new Date(now.getFullYear(),now.getMonth()+1,1);
+  const year=nextMonth.getFullYear(),month=nextMonth.getMonth();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  let count=0;
+  S.customers.forEach(cust=>{
+    (cust.fixedBookings||[]).forEach(fb=>{
+      for(let d=1;d<=daysInMonth;d++){
+        const date=new Date(year,month,d),dow=(date.getDay()+6)%7;
+        if(dow!==fb.dow)continue;
+        const ds=fmt(date);
+        if(isHoliday(ds)&&fb.holidayAction==='skip')continue;
+        if(fb.type!=='weekly'){const weekNum=Math.ceil(d/7);const weekMap={'1st':1,'2nd':2,'3rd':3,'4th':4};if(weekMap[fb.type]!==weekNum)continue}
+        const already=S.bookings.some(b=>b.date===ds&&b.time===fb.time&&b.name===cust.name1+' '+cust.name2);
+        if(already)continue;
+        const sorted=[...S.trainers].sort((a,b)=>(a.priority||99)-(b.priority||99));
+        let trainerId=cust.nominatedTrainerId;
+        if(!trainerId){const avail=sorted.find(tr=>!S.bookings.some(b=>b.date===ds&&b.time===fb.time&&b.trainerId===tr.id));trainerId=avail?.id||sorted[0]?.id}
+        const courseId=cust.contractIds?.[0]?.cid||S.courses[0]?.id;
+        S.bookings.push({id:nid++,name:cust.name1+' '+cust.name2,name1:cust.name1,name2:cust.name2,kana1:cust.kana1,kana2:cust.kana2,phone:cust.phone,trainerId,courseId,date:ds,time:fb.time,status:'confirmed',memo:'固定予約（自動）',nominatedTrainerId:cust.nominatedTrainerId||null});
+        count++;
+      }
+    });
+  });
+  toast(`✓ ${year}年${month+1}月分の固定予約を${count}件生成しました`,'#1a8fc7');
+  renderCal();
+}
+
+// ===== BOOKING SEARCH =====
+function renderBkSearch(){doBkSearch()}
+function doBkSearch(){
+  const q=(document.getElementById('bks-q')?.value||'').trim().toLowerCase();
+  const res=document.getElementById('bks-results');if(!res)return;
+  const hits=q?S.bookings.filter(b=>[b.name,b.kana1,b.kana2,(b.kana1||'')+(b.kana2||''),b.phone].join(' ').toLowerCase().includes(q)):S.bookings;
+  if(!hits.length){res.innerHTML=`<p style="color:#888;font-size:13px;margin-top:10px">該当する予約がありません</p>`;return}
+  const sorted=[...hits].sort((a,b)=>a.date<b.date?1:-1);
+  const statusColor={confirmed:'#1a8fc7',trial:'#4caf50',rest:'#e24b4a',cancelled:'#aaa'};
+  const statusBg={confirmed:'#dbeeff',trial:'#e4f8e4',rest:'#ffe4e4',cancelled:'#f0f0f0'};
+  const statusMap={confirmed:'予約確定',trial:'体験',rest:'休憩',cancelled:'キャンセル済み'};
+  res.innerHTML=`<div style="font-size:12px;color:#888;margin-bottom:8px">全${sorted.length}件</div>
+    <table class="data-table"><thead><tr>
+      <th>日時</th><th>お客様名</th><th>電話番号</th><th>コース</th><th>トレーナー</th><th>指名</th><th>ステータス</th><th>操作</th>
+    </tr></thead><tbody>${sorted.map(b=>{
+      const cs=getCourse(b.courseId),tr=getTrainer(b.trainerId),nomTr=b.nominatedTrainerId?getTrainer(b.nominatedTrainerId):null;
+      const st=b.status||'confirmed';
+      return`<tr>
+        <td style="white-space:nowrap">${b.date}<br><span style="font-size:11px;color:#888">${b.time}〜</span></td>
+        <td><span class="tlink" onclick="tab('calendar');jumpDate('${b.date}')">${b.name}</span><br><span style="font-size:11px;color:#888">${b.kana1||''} ${b.kana2||''}</span></td>
+        <td>${b.phone||'—'}</td>
+        <td style="font-size:12px">${cs?.name||'—'}</td>
+        <td>${tr?.name||'—'}</td>
+        <td>${nomTr?`<span style="color:#f5a623;font-weight:500">★${nomTr.name}</span>`:'—'}</td>
+        <td><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500;background:${statusBg[st]};color:${statusColor[st]}">${statusMap[st]||st}</span></td>
+        <td style="white-space:nowrap">
+          <button class="sm-btn" onclick="tab('calendar');jumpDate('${b.date}');setTimeout(()=>showPanel(${b.id}),100)">詳細</button>
+          ${st!=='cancelled'?`<button class="sm-btn danger" style="margin-left:4px" onclick="cancelBkFromSearch(${b.id})">削除</button>`:''}
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+function cancelBkFromSearch(id){S.bookings=S.bookings.filter(x=>x.id!==Number(id));doBkSearch();toast('✓ 予約を削除しました','#e24b4a')}
+
+// ===== TAGS =====
+function renderTagMgmt(){
+  const sid=S._selectedTagId||null;
+  document.getElementById('tag-mgmt-list').innerHTML=S.tags.map(t=>{
+    const count=S.customers.filter(c=>(c.tagIds||[]).includes(t.id)).length;
+    const isSel=sid===t.id;
+    return`<div style="background:#fff;border:1px solid ${isSel?'#1a8fc7':'#ddd'};border-radius:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;${isSel?'box-shadow:0 0 0 2px rgba(26,143,199,0.15)':''}" onclick="selectTag(${t.id})">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag-chip" style="${isSel?'background:#1a8fc7;color:#fff;border-color:#1a8fc7':''}">${t.name}</span>
+        <span style="font-size:11px;color:${isSel?'#1a8fc7':'#aaa'};font-weight:500">${count}名</span>
+      </div>
+      <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+        <button class="sm-btn" onclick="openTagModal(${t.id})">編集</button>
+        <button class="sm-btn danger" onclick="delTagById(${t.id})">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+  const panel=document.getElementById('tag-cust-panel');if(!panel)return;
+  if(!sid){panel.innerHTML=`<div style="color:#aaa;font-size:13px;text-align:center;padding:40px 0">タグをクリックすると<br>該当する顧客が表示されます</div>`;return}
+  const tag=getTag(sid),custs=S.customers.filter(c=>(c.tagIds||[]).includes(sid));
+  if(!custs.length){panel.innerHTML=`<div style="font-size:13px;font-weight:500;margin-bottom:12px;color:#1a8fc7">「${tag?.name}」の顧客</div><div style="color:#aaa;font-size:13px;text-align:center;padding:30px 0">該当する顧客がいません</div>`;return}
+  panel.innerHTML=`<div style="font-size:13px;font-weight:500;margin-bottom:12px;color:#1a8fc7">「${tag?.name}」の顧客（${custs.length}名）</div>
+    <table class="data-table"><thead><tr><th>番号</th><th>氏名</th><th>電話番号</th><th>契約コース</th></tr></thead>
+    <tbody>${custs.map(c=>`<tr><td>${c.custNo}</td>
+      <td><span class="tlink" onclick="subTab('customers');S.custView='detail';S.editCustId=${c.id};renderCustView()">${c.name1} ${c.name2}</span></td>
+      <td>${c.phone}</td>
+      <td>${(c.contractIds||[]).map(ci=>{const cs=getCourse(ci.cid);return`<span class="ctag plan">${cs?.name||''}</span>`}).join('')}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function selectTag(id){S._selectedTagId=S._selectedTagId===id?null:id;renderTagMgmt()}
+function openTagModal(id){
+  S.editTagId=id||null;const t=id?S.tags.find(x=>x.id===id):null;
+  document.getElementById('tag-modal-title').textContent=id?'タグを編集':'タグを追加';
+  document.getElementById('tag-del-btn').style.display=id?'block':'none';
+  document.getElementById('tag-name').value=t?.name||'';document.getElementById('tag-desc').value=t?.desc||'';
+  document.getElementById('tag-modal').style.display='flex';
+}
+function closeTagModal(){document.getElementById('tag-modal').style.display='none'}
+function saveTag(){
+  const name=document.getElementById('tag-name').value.trim();if(!name)return alert('タグ名を入力してください');
+  const tg={id:S.editTagId||nid++,name,desc:document.getElementById('tag-desc').value};
+  if(S.editTagId)S.tags=S.tags.map(t=>t.id===S.editTagId?tg:t);else S.tags.push(tg);
+  closeTagModal();renderTagMgmt();
+}
+function deleteTag(){S.tags=S.tags.filter(t=>t.id!==S.editTagId);closeTagModal();renderTagMgmt()}
+function delTagById(id){S.tags=S.tags.filter(t=>t.id!==id);renderTagMgmt()}
+
+// ===== COURSES =====
+function renderCourseView(){const el=document.getElementById('course-view');S.courseView==='list'?renderCourseList(el):renderCourseDetail(el,S.editCourseId)}
+function renderCourseList(el){
+  el.innerHTML=`<div class="pg-header"><span class="pg-title">コース管理</span><button class="mbtn primary" onclick="S.courseView='detail';S.editCourseId=null;renderCourseView()">+ 新規コース登録</button></div>
+    <table class="data-table"><thead><tr><th style="width:40px">順</th><th>コース名</th><th>提供時間</th><th>料金</th><th>プラン数</th><th>公開</th></tr></thead><tbody id="course-tbody"></tbody></table>`;
+  renderCourseRows();
+}
+function renderCourseRows(){
+  const tb=document.getElementById('course-tbody');if(!tb)return;
+  tb.innerHTML=S.courses.map((c,i)=>`<tr>
+    <td style="text-align:center"><div class="order-btns"><button class="order-btn" onclick="moveCourse(${i},-1)">▲</button><button class="order-btn" onclick="moveCourse(${i},1)">▼</button></div></td>
+    <td><span class="tlink" onclick="openCourseDetail(${c.id})">${c.name}</span></td>
+    <td>${c.dur}分</td><td>${c.price?'¥'+c.price.toLocaleString():'設定なし'}</td>
+    <td>${c.plans?.length||0}件</td>
+    <td><span class="pub-badge ${c.status==='open'?'open':'closed'}">${c.status==='open'?'公開中':'非公開'}</span></td>
+  </tr>`).join('');
+}
+function moveCourse(idx,dir){const ni=idx+dir;if(ni<0||ni>=S.courses.length)return;[S.courses[idx],S.courses[ni]]=[S.courses[ni],S.courses[idx]];renderCourseRows()}
+function openCourseDetail(id){S.courseView='detail';S.editCourseId=id||null;renderCourseView()}
+function renderCourseDetail(el,editId){
+  const c=editId?S.courses.find(x=>x.id===editId):{id:null,name:'',catchcopy:'',desc:'',dur:60,startUnit:30,price:null,priceType:'none',status:'open',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds:S.trainers.map(t=>t.id),timeRestrict:false,timeOpenStr:'09:00',timeCloseStr:'21:00',plans:[]};
+  window._tmpPlans=[...(c.plans||[])];
+  const staffCB=S.trainers.map(t=>`<label style="display:flex;align-items:center;gap:5px;margin-right:12px;font-size:13px;cursor:pointer"><input type="checkbox" value="${t.id}" ${(c.staffIds||[]).includes(t.id)?'checked':''}> ${t.name}</label>`).join('');
+  const mkTimeOpts=(sel)=>Array.from({length:24},(_,i)=>[`<option value="${String(i).padStart(2,'0')}:00"${sel===`${String(i).padStart(2,'0')}:00`?' selected':''}>${i}:00</option>`,`<option value="${String(i).padStart(2,'0')}:30"${sel===`${String(i).padStart(2,'0')}:30`?' selected':''}>${i}:30</option>`]).flat().join('');
+  el.innerHTML=`<div class="breadcrumb"><span onclick="S.courseView='list';renderCourseView()">コース管理</span> ＞ ${editId?c.name:'新規'}</div>
+    <div class="pg-header"><span class="pg-title">${editId?'コース編集':'新規コース登録'}</span>
+    <div style="display:flex;gap:8px">${editId?`<button class="mbtn danger" onclick="deleteCourseById(${editId})">削除</button>`:''}
+    <button class="mbtn" onclick="S.courseView='list';renderCourseView()">戻る</button><button class="mbtn primary" onclick="saveCourse()">保存する</button></div></div>
+    <div style="max-width:760px">
+      <div class="section-card"><div class="section-title">基本設定</div>
+        <div class="form-row"><div class="lbl">コース名<span class="req">●</span></div><div class="inp-area"><input class="fi fi-lg" id="cs-name" value="${c.name}"></div></div>
+        <div class="form-row"><div class="lbl">説明文</div><div class="inp-area"><textarea class="fi fi-lg" id="cs-desc" style="height:70px">${c.desc||''}</textarea></div></div>
+        <div class="form-row"><div class="lbl">提供時間</div><div class="inp-area"><div style="display:flex;align-items:center;gap:8px"><input type="number" class="fi fi-sm" id="cs-dur" value="${c.dur}" min="10" step="5"> 分</div></div></div>
+        <div class="form-row"><div class="lbl">開始時間単位</div><div class="inp-area"><select class="fi" id="cs-startunit" style="width:auto">${[10,15,20,30,60].map(v=>`<option value="${v}"${c.startUnit===v?' selected':''}>${v}分</option>`).join('')}</select></div></div>
+        <div class="form-row"><div class="lbl">料金（税込）</div><div class="inp-area">
+          <div class="radio-group"><label><input type="radio" name="pricetype" value="none" ${c.priceType==='none'?'checked':''} onchange="togglePriceInput()"> 設定しない</label><label><input type="radio" name="pricetype" value="fixed" ${c.priceType==='fixed'?'checked':''} onchange="togglePriceInput()"> 固定料金</label></div>
+          <div id="price-input-area" style="margin-top:8px;display:${c.priceType==='fixed'?'flex':'none'};align-items:center;gap:6px"><input type="number" class="fi fi-sm" id="cs-price" value="${c.price||''}" min="0"> 円</div>
+        </div></div>
+        <div class="form-row"><div class="lbl">公開ステータス</div><div class="inp-area"><div class="radio-group"><label><input type="radio" name="cstatus" value="open" ${c.status==='open'?'checked':''}> 公開中</label><label><input type="radio" name="cstatus" value="closed" ${c.status==='closed'?'checked':''}> 非公開</label></div></div></div>
+        <div class="form-row"><div class="lbl">予約可能時間帯</div><div class="inp-area">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="cs-time-restrict" ${c.timeRestrict?'checked':''} onchange="toggleTimeRestrict()"> 時間帯を制限する</label>
+          <div id="cs-time-restrict-area" style="display:${c.timeRestrict?'flex':'none'};align-items:center;gap:8px">
+            <select class="fi" id="cs-time-open" style="width:auto">${mkTimeOpts(c.timeOpenStr||'09:00')}</select>〜
+            <select class="fi" id="cs-time-close" style="width:auto">${mkTimeOpts(c.timeCloseStr||'21:00')}</select>
+          </div>
+        </div></div>
+      </div>
+      <div class="section-card"><div class="section-title">回数プラン設定</div>
+        ${c.plans.length?`<table class="plan-table"><thead><tr><th>プラン名</th><th>月回数</th><th>料金</th><th>操作</th></tr></thead><tbody id="plan-tbody">${c.plans.map(p=>`<tr data-pid="${p.id}"><td>${p.name}</td><td>月${p.times}回</td><td>¥${p.price.toLocaleString()}</td><td><button class="sm-btn danger" onclick="deletePlanRow(${p.id})">削除</button></td></tr>`).join('')}</tbody></table>`:`<p style="font-size:12px;color:#888;margin-bottom:8px" id="no-plan-msg">まだプランがありません</p><table class="plan-table" id="plan-tbl" style="display:none"><thead><tr><th>プラン名</th><th>月回数</th><th>料金</th><th>操作</th></tr></thead><tbody id="plan-tbody"></tbody></table>`}
+        <div class="add-plan-row"><input class="fi" id="np-name" placeholder="プラン名" style="width:140px">月<input type="number" class="fi" id="np-times" placeholder="回数" min="1" style="width:60px">回 ¥<input type="number" class="fi" id="np-price" placeholder="料金" min="0" style="width:100px"><button class="mbtn primary" onclick="addPlan()">+ 追加</button></div>
+      </div>
+      <div class="section-card"><div class="section-title">担当スタッフ</div>
+        <div class="form-row"><div class="lbl">スタッフ</div><div class="inp-area"><div class="radio-group" id="staff-checkboxes">${staffCB}</div></div></div>
+      </div>
+    </div>`;
+}
+function togglePriceInput(){document.getElementById('price-input-area').style.display=document.querySelector('input[name="pricetype"]:checked')?.value==='fixed'?'flex':'none'}
+function toggleTimeRestrict(){document.getElementById('cs-time-restrict-area').style.display=document.getElementById('cs-time-restrict')?.checked?'flex':'none'}
+function addPlan(){
+  const name=document.getElementById('np-name').value.trim(),times=parseInt(document.getElementById('np-times').value),price=parseInt(document.getElementById('np-price').value);
+  if(!name||!times||isNaN(price))return alert('プラン名・回数・料金をすべて入力してください');
+  const p={id:nid++,name,times,price};window._tmpPlans.push(p);
+  const msg=document.getElementById('no-plan-msg'),tbl=document.getElementById('plan-tbl');
+  if(msg)msg.style.display='none';if(tbl)tbl.style.display='';
+  const tbody=document.getElementById('plan-tbody');
+  if(tbody){const tr=document.createElement('tr');tr.dataset.pid=p.id;tr.innerHTML=`<td>${p.name}</td><td>月${p.times}回</td><td>¥${p.price.toLocaleString()}</td><td><button class="sm-btn danger" onclick="deletePlanRow(${p.id})">削除</button></td>`;tbody.appendChild(tr)}
+  document.getElementById('np-name').value='';document.getElementById('np-times').value='';document.getElementById('np-price').value='';
+}
+function deletePlanRow(pid){window._tmpPlans=window._tmpPlans.filter(p=>p.id!==pid);const tr=document.querySelector(`#plan-tbody tr[data-pid="${pid}"]`);if(tr)tr.remove()}
+function saveCourse(){
+  const name=document.getElementById('cs-name')?.value?.trim();if(!name)return alert('コース名を入力してください');
+  const staffIds=Array.from(document.querySelectorAll('#staff-checkboxes input:checked')).map(el=>parseInt(el.value));
+  const priceType=document.querySelector('input[name="pricetype"]:checked')?.value||'none';
+  const timeRestrict=document.getElementById('cs-time-restrict')?.checked||false;
+  const cs={id:S.editCourseId||nid++,name,catchcopy:'',desc:document.getElementById('cs-desc')?.value||'',dur:parseInt(document.getElementById('cs-dur')?.value)||60,startUnit:parseInt(document.getElementById('cs-startunit')?.value)||30,price:priceType==='fixed'?parseInt(document.getElementById('cs-price')?.value)||null:null,priceType,status:document.querySelector('input[name="cstatus"]:checked')?.value||'open',acceptStart:'',acceptEnd:'',acceptType:'immediate',acceptClose:'',cancelClose:'',staffIds,timeRestrict,timeOpenStr:document.getElementById('cs-time-open')?.value||'09:00',timeCloseStr:document.getElementById('cs-time-close')?.value||'21:00',plans:window._tmpPlans||[]};
+  if(S.editCourseId)S.courses=S.courses.map(c=>c.id===S.editCourseId?cs:c);else S.courses.push(cs);
+  S.courseView='list';renderCourseView();
+}
+function deleteCourseById(id){S.courses=S.courses.filter(c=>c.id!==id);S.courseView='list';renderCourseView()}
+
+// ===== CUSTOMERS =====
+function renderCustView(){
+  const el=document.getElementById('cust-view');
+  if(S.custView==='list')renderCustList(el);
+  else if(S.custView==='new')renderCustForm(el,null);
+  else if(S.custView==='edit')renderCustForm(el,S.editCustId);
+  else renderCustDetail(el,S.editCustId);
+}
+function vv(id){return(document.getElementById(id)||{}).value||''}
+function renderCustList(el){
+  el.innerHTML=`<div class="pg-header"><span class="pg-title">顧客管理</span><button class="mbtn primary" onclick="S.custView='new';renderCustView()">新規顧客を登録する</button></div>
+    <div class="search-box">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="s-quick" class="fi fi-lg" placeholder="氏名・フリガナ・電話番号で検索" oninput="doSearch()">
+        <button class="mbtn" onclick="document.getElementById('s-quick').value='';doSearch()">クリア</button>
+      </div>
+    </div><div id="cust-results"></div>`;
+  doSearch();
+}
+function doSearch(){
+  const q=(document.getElementById('s-quick')?.value||'').trim().toLowerCase();
+  const f=q?S.customers.filter(c=>[c.kana1,c.kana2,c.kana1+c.kana2,c.name1,c.name2,c.name1+c.name2,c.phone,c.custNo,c.email].join(' ').toLowerCase().includes(q)):S.customers;
+  const res=document.getElementById('cust-results');if(!res)return;
+  if(!f.length){res.innerHTML=`<p style="color:#888;margin-top:14px;font-size:13px">該当なし</p>`;return}
+  res.innerHTML=`<table class="data-table" style="margin-top:12px"><thead><tr><th>番号</th><th>氏名（フリガナ）</th><th>電話番号</th><th>メール</th><th>契約コース</th><th>タグ</th></tr></thead>
+    <tbody>${f.map(c=>`<tr><td>${c.custNo}</td>
+      <td><span class="tlink" onclick="viewCust(${c.id})">${c.name1} ${c.name2}</span><br><span style="font-size:11px;color:#888">${c.kana1} ${c.kana2}</span></td>
+      <td>${c.phone}</td><td>${c.email}</td>
+      <td>${(c.contractIds||[]).map(ci=>{const cs=getCourse(ci.cid),pl=getPlan(cs,ci.pid);return`<span class="ctag plan">${cs?.name||''}${pl?' '+pl.name:''}</span>`}).join('')}</td>
+      <td>${(c.tagIds||[]).map(tid=>`<span class="ctag tag">${getTag(tid)?.name||''}</span>`).join('')}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function viewCust(id){S.custView='detail';S.editCustId=id;renderCustView()}
+function renderCustDetail(el,id){
+  const c=S.customers.find(x=>x.id===id),nomTr=c.nominatedTrainerId?getTrainer(c.nominatedTrainerId):null;
+  el.innerHTML=`<div style="margin-bottom:12px"><button class="mbtn" onclick="S.custView='list';renderCustView()">← 戻る</button></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+      <div><div style="font-size:20px;font-weight:500">${c.name1} ${c.name2}</div><div style="font-size:13px;color:#888;margin-top:2px">${c.kana1} ${c.kana2}</div></div>
+      <button class="mbtn primary" onclick="S.custView='edit';S.editCustId=${id};renderCustView()">編集する</button>
+    </div>
+    <div class="detail-section"><h3>基本情報</h3><div class="info-grid">
+      <div class="lbl">お客様番号</div><div class="val">${c.custNo}</div>
+      <div class="lbl">性別</div><div class="val">${c.gender||'—'}</div>
+      <div class="lbl">電話番号</div><div class="val">${c.phone}</div>
+      <div class="lbl">メール</div><div class="val">${c.email}</div>
+      <div class="lbl">指名トレーナー</div><div class="val">${nomTr?nomTr.name+'（¥'+nomTr.nomFee.toLocaleString()+'）':'なし'}</div>
+      <div class="lbl">生年月日</div><div class="val">${c.birth||'—'}</div>
+      <div class="lbl">都道府県</div><div class="val">${c.pref||'—'}</div>
+      <div class="lbl">住所</div><div class="val" style="grid-column:span 3">${c.addr||'—'}</div>
+      <div class="lbl">メモ</div><div class="val" style="grid-column:span 3">${c.memo||'—'}</div>
+    </div></div>
+    <div class="detail-section"><h3>契約コース・プラン</h3>${(c.contractIds||[]).length?c.contractIds.map(ci=>{const cs=getCourse(ci.cid),pl=getPlan(cs,ci.pid);return`<div style="margin-bottom:6px"><span class="ctag plan">${cs?.name||'不明'}</span>${pl?`<span class="ctag tag">${pl.name}（月${pl.times}回 / ¥${pl.price?.toLocaleString()}）</span>`:''}</div>`}).join(''):'<p style="font-size:13px;color:#888">なし</p>'}</div>
+    <div class="detail-section"><h3>固定予約</h3>${(c.fixedBookings||[]).length?c.fixedBookings.map(fb=>{const typeMap={weekly:'毎週','1st':'第1','2nd':'第2','3rd':'第3','4th':'第4'};return`<div style="margin-bottom:4px;font-size:13px">${typeMap[fb.type]||fb.type} ${DAY_NAMES[fb.dow]}曜 ${fb.time}〜　祝日：${fb.holidayAction==='skip'?'スキップ':'通常通り'}</div>`}).join(''):'<p style="font-size:13px;color:#888">なし</p>'}</div>
+    <div class="detail-section"><h3>タグ</h3>${(c.tagIds||[]).map(tid=>`<span class="ctag tag">${getTag(tid)?.name||''}</span>`).join('')||'<p style="font-size:13px;color:#888">なし</p>'}</div>`;
+}
+function renderCustForm(el,editId){
+  const c=editId?S.customers.find(x=>x.id===editId):{contractIds:[],tagIds:[],nominatedTrainerId:null,fixedBookings:[]};
+  const isEdit=!!editId;
+  window._tmpFixedBks=(c.fixedBookings||[]).map(fb=>({type:fb.type,dow:fb.dow,time:fb.time,holidayAction:fb.holidayAction,id:fb.id||'f'+nid++}));
+  const prefs=['—','北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+  const contractUI=S.courses.filter(cs=>cs.id!==5).map(cs=>{
+    const sel=c.contractIds?.find(ci=>ci.cid===cs.id);
+    return`<div style="margin-bottom:8px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;background:#fff">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:500"><input type="checkbox" class="contract-cs" data-cid="${cs.id}" ${sel?'checked':''} onchange="updatePlanSelect(this)"> ${cs.name}</label>
+      ${cs.plans?.length?`<div id="plan-sel-${cs.id}" style="display:${sel?'flex':'none'};align-items:center;gap:6px;margin-top:6px;padding-left:20px"><span style="font-size:12px;color:#888">プラン：</span><select class="f" style="width:auto;font-size:12px" id="plan-sel-select-${cs.id}"><option value="">選択してください</option>${cs.plans.map(p=>`<option value="${p.id}" ${sel?.pid===p.id?'selected':''}>${p.name}（月${p.times}回 / ¥${p.price.toLocaleString()}）</option>`).join('')}</select></div>`:''}</div>`;}).join('');
+  const fixedBkHtml=window._tmpFixedBks.map((fb,fi)=>fixedBkRow(fb,fi)).join('');
+  el.innerHTML=`<div style="margin-bottom:12px"><button class="mbtn" onclick="S.custView=${isEdit?`'detail'`:`'list'`};renderCustView()">← 戻る</button></div>
+    <h2 style="font-size:17px;font-weight:500;color:#1a8fc7;margin-bottom:14px">${isEdit?'顧客情報を編集':'新規顧客登録'}</h2>
+    <div class="reg-form"><table class="form-table">
+      <tr><td>フリガナ ●</td><td><div class="f-pair"><input class="f f-md" id="f-k1" placeholder="アオゾラ" value="${c.kana1||''}"><input class="f f-md" id="f-k2" placeholder="タロウ" value="${c.kana2||''}"></div></td></tr>
+      <tr><td>名前</td><td><div class="f-pair"><input class="f f-md" id="f-n1" placeholder="青空" value="${c.name1||''}"><input class="f f-md" id="f-n2" placeholder="太郎" value="${c.name2||''}"></div></td></tr>
+      <tr><td>電話番号1</td><td><input class="f f-md" id="f-ph" value="${c.phone||''}"></td></tr>
+      <tr><td>電話番号2</td><td><input class="f f-md" id="f-ph2" value="${c.phone2||''}"></td></tr>
+      <tr><td>メールアドレス1</td><td><input class="f f-lg" id="f-em" value="${c.email||''}"></td></tr>
+      <tr><td>メールアドレス2</td><td><input class="f f-lg" id="f-em2" value="${c.email2||''}"></td></tr>
+      <tr><td>お客様番号</td><td><input class="f f-sm" id="f-no" value="${c.custNo||''}"></td></tr>
+      <tr><td>性別</td><td><select class="f" id="f-gd">${['—','男性','女性','その他'].map(g=>`<option${c.gender===g?' selected':''}>${g}</option>`).join('')}</select></td></tr>
+      <tr><td>生年月日</td><td><input type="date" class="f f-sm" id="f-br" value="${c.birth||''}"></td></tr>
+      <tr><td>都道府県</td><td><select class="f" id="f-pf">${prefs.map(p=>`<option${c.pref===p?' selected':''}>${p}</option>`).join('')}</select></td></tr>
+      <tr><td>住所</td><td><input class="f f-lg" id="f-ad" value="${c.addr||''}"></td></tr>
+      <tr><td>指名トレーナー</td><td><select class="f" id="f-nom-tr"><option value="">指名なし</option>${S.trainers.map(t=>`<option value="${t.id}"${c.nominatedTrainerId===t.id?' selected':''}>${t.name}（¥${(t.nomFee||0).toLocaleString()}）</option>`).join('')}</select></td></tr>
+      <tr><td>契約コース</td><td>${contractUI}</td></tr>
+      <tr><td>固定予約</td><td>
+        <div id="fixed-bk-list" style="display:grid;gap:8px;margin-bottom:8px">${fixedBkHtml}</div>
+        <button class="mbtn" style="font-size:12px" onclick="addFixedBkRow()">+ 固定予約を追加</button>
+      </td></tr>
+      <tr><td>タグ</td><td><div class="tag-area">${S.tags.map(t=>`<span class="tag-opt${(c.tagIds||[]).includes(t.id)?' sel-tag':''}" data-tid="${t.id}" onclick="this.classList.toggle('sel-tag')">${t.name}</span>`).join('')}</div></td></tr>
+      <tr><td>お客様メモ</td><td><textarea class="f f-lg" id="f-me" style="height:70px">${c.memo||''}</textarea></td></tr>
+    </table>
+    <div class="form-actions">
+      ${isEdit?`<button class="mbtn danger" onclick="deleteCust(${editId})">削除</button>`:''}
+      <button class="mbtn" onclick="S.custView=${isEdit?`'detail'`:`'list'`};renderCustView()">キャンセル</button>
+      <button class="mbtn primary" onclick="saveCust(${editId||'null'})">保存する</button>
+    </div></div>`;
+}
+function updatePlanSelect(cb){const row=document.getElementById(`plan-sel-${cb.dataset.cid}`);if(row)row.style.display=cb.checked?'flex':'none'}
+function saveCust(editId){
+  const k1=document.getElementById('f-k1')?.value?.trim();if(!k1)return alert('フリガナ（姓）を入力してください');
+  const contractIds=Array.from(document.querySelectorAll('.contract-cs:checked')).map(cb=>{const cid=parseInt(cb.dataset.cid),sel=document.getElementById(`plan-sel-select-${cid}`);return{cid,pid:sel&&sel.value?parseInt(sel.value):null}});
+  const tagIds=Array.from(document.querySelectorAll('.tag-opt.sel-tag')).map(el=>parseInt(el.dataset.tid));
+  const nomTrId=parseInt(document.getElementById('f-nom-tr')?.value)||0;
+  const cust={id:editId||nid++,kana1:k1,kana2:vv('f-k2'),name1:vv('f-n1')||k1,name2:vv('f-n2'),phone:vv('f-ph'),phone2:vv('f-ph2'),email:vv('f-em'),email2:vv('f-em2'),custNo:vv('f-no'),gender:vv('f-gd'),birth:vv('f-br'),pref:vv('f-pf'),addr:vv('f-ad'),memo:vv('f-me'),nominatedTrainerId:nomTrId||null,contractIds,tagIds,fixedBookings:window._tmpFixedBks||[]};
+  if(editId)S.customers=S.customers.map(c=>c.id===editId?cust:c);else S.customers.push(cust);
+  S.custView=editId?'detail':'list';S.editCustId=editId||cust.id;renderCustView();
+}
+function deleteCust(id){S.customers=S.customers.filter(c=>c.id!==id);S.custView='list';renderCustView()}
+
+// ===== TRAINERS =====
+function renderTrainers(){
+  const sorted=[...S.trainers].sort((a,b)=>(a.priority||99)-(b.priority||99));
+  document.getElementById('trainer-list').innerHTML=`
+    <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">優先順位</div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px">自動割り当て・固定予約時に使用</div>
+      <div style="display:grid;gap:6px">
+        ${sorted.map((t,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f8f8;border:1px solid #ddd;border-radius:6px">
+          <span style="font-size:18px;font-weight:700;color:#1a8fc7;width:24px">${i+1}</span>
+          <span style="font-weight:500;flex:1">${t.name}</span>
+          <span style="font-size:11px;color:#888">${t.role}</span>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <button class="order-btn" onclick="changePriority(${t.id},-1)">▲</button>
+            <button class="order-btn" onclick="changePriority(${t.id},1)">▼</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+    ${S.trainers.map(t=>`<div class="item-card">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar">${t.name.slice(0,2)}</div>
+        <div><div style="font-weight:500;font-size:14px">${t.name} <span style="font-size:11px;background:#e8f4fb;color:#1a8fc7;padding:1px 6px;border-radius:8px;margin-left:4px">優先度${t.priority||'—'}</span></div>
+        <div style="font-size:12px;color:#888">${t.role}　<span style="color:#f5a623;font-weight:500">指名料 ¥${(t.nomFee||0).toLocaleString()}</span></div></div>
+      </div>
+      <div style="display:flex;gap:6px"><button class="sm-btn" onclick="openTrModal(${t.id})">編集</button><button class="sm-btn danger" onclick="delTr(${t.id})">削除</button></div>
+    </div>`).join('')}`;
+}
+function changePriority(id,dir){
+  const sorted=[...S.trainers].sort((a,b)=>(a.priority||99)-(b.priority||99));
+  const idx=sorted.findIndex(t=>t.id===id);const ni=idx+dir;
+  if(ni<0||ni>=sorted.length)return;
+  const tmp=sorted[idx].priority;sorted[idx].priority=sorted[ni].priority;sorted[ni].priority=tmp;
+  S.trainers=S.trainers.map(t=>{const f=sorted.find(s=>s.id===t.id);return f?{...t,priority:f.priority}:t});
+  renderTrainers();
+}
+function openTrModal(id){
+  S.editTrId=id||null;const t=id?S.trainers.find(x=>x.id===id):null;
+  document.getElementById('tr-modal-title').textContent=id?'トレーナーを編集':'トレーナーを追加';
+  document.getElementById('tr-del-btn').style.display=id?'block':'none';
+  document.getElementById('tr-name').value=t?.name||'';document.getElementById('tr-role').value=t?.role||'';
+  document.getElementById('tr-nom-fee').value=t?.nomFee||'';document.getElementById('tr-priority').value=t?.priority||'';
+  document.getElementById('tr-modal').style.display='flex';
+}
+function closeTrModal(){document.getElementById('tr-modal').style.display='none'}
+function saveTr(){
+  const name=document.getElementById('tr-name').value.trim();if(!name)return alert('氏名を入力してください');
+  const tr={id:S.editTrId||nid++,name,role:document.getElementById('tr-role').value,nomFee:parseInt(document.getElementById('tr-nom-fee').value)||0,priority:parseInt(document.getElementById('tr-priority').value)||99};
+  if(S.editTrId)S.trainers=S.trainers.map(t=>t.id===S.editTrId?tr:t);else S.trainers.push(tr);
+  closeTrModal();renderTrainers();
+}
+function deleteTr(){S.trainers=S.trainers.filter(t=>t.id!==S.editTrId);closeTrModal();renderTrainers();toast('✓ トレーナーを削除しました','#e24b4a')}
+function delTr(id){S.trainers=S.trainers.filter(t=>t.id!==id);renderTrainers();toast('✓ トレーナーを削除しました','#e24b4a')}
+
+function showCsvModal(csv,filename,tableHtml){
+  const existing=document.getElementById('csv-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='csv-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:#fff;border-radius:8px;width:820px;max-height:85vh;display:flex;flex-direction:column;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div><div style="font-size:15px;font-weight:500">📊 ${filename}</div></div>
+      <button onclick="document.getElementById('csv-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+    </div>
+    <!-- テーブル表示 -->
+    <div style="overflow:auto;margin-bottom:14px;border:1px solid #ddd;border-radius:6px">${tableHtml}</div>
+    <!-- コピー用CSV -->
+    <div style="font-size:12px;font-weight:500;color:#555;margin-bottom:6px">📋 コピー用CSV（Excelやスプレッドシートに貼り付け）</div>
+    <textarea id="csv-text" style="height:90px;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:11px;font-family:monospace;resize:none;background:#f8f8f8">${csv}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+      <button class="mbtn" onclick="document.getElementById('csv-modal').remove()">閉じる</button>
+      <button class="mbtn primary" onclick="const t=document.getElementById('csv-text');t.select();document.execCommand('copy');toast('✓ コピーしました','#1a8fc7')">📋 CSVをコピー</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+let shiftMonthOffset=0;
+function shiftMonthMove(d){shiftMonthOffset+=d;renderShiftMonth()}
+function shiftMonthReset(){shiftMonthOffset=0;renderShiftMonth()}
+function getShiftMonthDays(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth()+shiftMonthOffset;
+  const base=new Date(y,m,1);
+  const year=base.getFullYear(),month=base.getMonth();
+  const days=[],total=new Date(year,month+1,0).getDate();
+  for(let d=1;d<=total;d++)days.push(new Date(year,month,d));
+  return{days,year,month};
+}
+function renderShiftMonth(){
+  const {days,year,month}=getShiftMonthDays();
+  document.getElementById('shift-month-label').textContent=`${year}年${month+1}月`;
+  let h=`<table style="border-collapse:collapse;min-width:${160+days.length*64}px;font-size:12px">
+    <thead><tr><th style="position:sticky;left:0;z-index:20;background:#f8f8f8;border:1px solid #ddd;padding:8px 14px;min-width:120px;text-align:left">スタッフ</th>`;
+  days.forEach(d=>{
+    const ds=fmt(d),dow=d.getDay(),isH=isHoliday(ds),it=ds===TODAY;
+    const col=dow===6?'#1a8fc7':isH||dow===0?'#e24b4a':'#333';
+    const bg=it?'#e8f4fb':dow===0||dow===6||isH?'#fff5f5':'#f8f8f8';
+    h+=`<th style="border:1px solid #ddd;padding:4px 2px;text-align:center;min-width:60px;background:${bg};color:${col}">
+      <div style="font-size:11px">${WJAP(dow)}</div><div style="font-size:13px;font-weight:500">${d.getDate()}</div>
+      ${isH?`<div style="font-size:9px;color:#e24b4a">祝</div>`:''}
+    </th>`;
+  });
+  h+=`</tr></thead><tbody>`;
+  S.trainers.forEach(tr=>{
+    h+=`<tr><td style="position:sticky;left:0;z-index:10;background:#fff;border:1px solid #ddd;padding:8px 14px;font-weight:500;white-space:nowrap">
+      <div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px">${tr.name.slice(0,2)}</div>${tr.name}</div></td>`;
+    days.forEach(d=>{
+      const ds=fmt(d),dow=d.getDay(),isH=isHoliday(ds),it=ds===TODAY;
+      const shift=getShift(tr.id,ds),st=shift?.type||'work',cfg=SHIFT_TYPES[st];
+      const bgCell=it?'rgba(26,143,199,0.06)':dow===0||dow===6||isH?'#fff8f8':'#fff';
+      h+=`<td style="border:1px solid #eee;padding:3px;text-align:center;background:${bgCell}" onclick="openShiftSelect(event,${tr.id},'${ds}',this)">
+        <div style="border-radius:4px;padding:4px 2px;font-size:11px;font-weight:500;background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.bc};min-height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer">${cfg.label}</div>
+      </td>`;
+    });
+    h+=`</tr>`;
+  });
+  // 出勤人数集計
+  h+=`<tr style="background:#f0f7ff"><td style="position:sticky;left:0;z-index:10;background:#e8f4fb;border:1px solid #ddd;padding:8px 14px;font-weight:500;font-size:12px;color:#1a8fc7">出勤人数</td>`;
+  days.forEach(d=>{
+    const ds=fmt(d),working=S.trainers.filter(tr=>{const sh=getShift(tr.id,ds);return !sh||sh.type==='work'}).length;
+    h+=`<td style="border:1px solid #eee;text-align:center;padding:4px;background:#f0f7ff"><span style="font-size:12px;font-weight:600;color:${working===0?'#ccc':'#1a8fc7'}">${working}</span><span style="font-size:10px;color:#aaa">/${S.trainers.length}</span></td>`;
+  });
+  h+=`</tr></tbody></table>`;
+  document.getElementById('shift-month-table').innerHTML=h;
+}
+let _shiftPopup=null;
+function openShiftSelect(e,trainerId,date,td){
+  e.stopPropagation();closeShiftPopup();
+  const cur=getShift(trainerId,date),curType=cur?.type||'work';
+  const popup=document.createElement('div');
+  popup.id='shift-popup';
+  popup.style.cssText='position:fixed;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:500;padding:6px;min-width:110px';
+  const rect=td.getBoundingClientRect();
+  popup.style.top=(rect.bottom+4)+'px';popup.style.left=rect.left+'px';
+  Object.entries(SHIFT_TYPES).forEach(([key,cfg])=>{
+    const item=document.createElement('div');
+    item.style.cssText=`padding:7px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;background:${curType===key?cfg.bg:'transparent'};color:${curType===key?cfg.color:'#333'};border:1px solid ${curType===key?cfg.bc:'transparent'};margin-bottom:3px`;
+    item.innerHTML=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cfg.bc}"></span>${cfg.label}`;
+    item.onmouseover=()=>{if(curType!==key)item.style.background='#f5f5f5'};
+    item.onmouseout=()=>{if(curType!==key)item.style.background='transparent'};
+    item.onclick=(ev)=>{ev.stopPropagation();applyShift(trainerId,date,key);closeShiftPopup()};
+    popup.appendChild(item);
+  });
+  document.body.appendChild(popup);_shiftPopup=popup;
+  setTimeout(()=>document.addEventListener('click',closeShiftPopup,{once:true}),0);
+}
+function closeShiftPopup(){if(_shiftPopup){_shiftPopup.remove();_shiftPopup=null}}
+function applyShift(trainerId,date,type){
+  S.shifts=S.shifts.filter(s=>!(s.trainerId===trainerId&&s.date===date));
+  if(type!=='work')S.shifts.push({id:nid++,trainerId,date,type});
+  renderShiftMonth();
+}
+function downloadShiftMonthCSV(){
+  const {days,year,month}=getShiftMonthDays();
+  const csv=[`${year}年${month+1}月 シフト表`,['スタッフ',...days.map(d=>`${d.getDate()}(${WJAP(d.getDay())})`)].join(','),...S.trainers.map(tr=>[tr.name,...days.map(d=>{const sh=getShift(tr.id,fmt(d));return sh?{work:'出勤',off:'休日',paid:'有給',annual:'年休'}[sh.type]:'出勤'})].join(','))].join('\n');
+  // テーブルHTML生成
+  let tbl=`<table style="border-collapse:collapse;font-size:12px;width:100%"><thead><tr>
+    <th style="background:#f8f8f8;padding:8px 10px;border:1px solid #ddd;text-align:left;position:sticky;left:0">スタッフ</th>
+    ${days.map(d=>{const dow=d.getDay(),isH=isHoliday(fmt(d));const col=dow===6?'#1a8fc7':isH||dow===0?'#e24b4a':'#333';return`<th style="background:#f8f8f8;padding:6px 4px;border:1px solid #ddd;text-align:center;min-width:44px;color:${col}">${d.getDate()}<br><span style="font-size:10px">${WJAP(dow)}</span></th>`}).join('')}
+  </tr></thead><tbody>`;
+  S.trainers.forEach((tr,i)=>{
+    tbl+=`<tr style="background:${i%2?'#fafafa':'#fff'}"><td style="padding:8px 10px;border:1px solid #ddd;font-weight:500;position:sticky;left:0;background:${i%2?'#fafafa':'#fff'}">${tr.name}</td>`;
+    days.forEach(d=>{
+      const sh=getShift(tr.id,fmt(d)),type=sh?.type||'work',cfg=SHIFT_TYPES[type];
+      tbl+=`<td style="padding:5px 3px;border:1px solid #eee;text-align:center"><span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:500;background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.bc}">${cfg.label}</span></td>`;
+    });
+    tbl+=`</tr>`;
+  });
+  tbl+=`</tbody></table>`;
+  showCsvModal(csv,`シフト_${year}${String(month+1).padStart(2,'0')}.csv`,tbl);
+}
+
+// ===== CSV =====
+function renderCsvPage(){
+  const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
+  const defaultFrom=`${y}-${m}-01`,lastDay=new Date(y,now.getMonth()+1,0).getDate(),defaultTo=`${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+  document.getElementById('csv-content').innerHTML=`
+    <div class="pg-header"><span class="pg-title">📊 データ出力</span></div>
+    <div class="settings-card" style="max-width:760px">
+      <h3>トレーナー別レッスン本数</h3>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <label style="font-size:13px;color:#555">期間：</label>
+        <input type="date" id="csv-from" value="${defaultFrom}" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff">
+        <span style="color:#888">〜</span>
+        <input type="date" id="csv-to" value="${defaultTo}" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff">
+        <button class="mbtn primary" onclick="previewLessonCsv()">集計する</button>
+      </div>
+      <div id="csv-preview"></div>
+    </div>`;
+}
+function previewLessonCsv(){
+  const from=document.getElementById('csv-from').value,to=document.getElementById('csv-to').value;
+  if(!from||!to)return alert('期間を入力してください');
+  const targets=S.bookings.filter(b=>b.date>=from&&b.date<=to&&b.status!=='cancelled'&&b.status!=='rest');
+  const courses=S.courses.filter(c=>c.id!==5);
+  const sorted=[...S.trainers].sort((a,b)=>(a.priority||99)-(b.priority||99));
+  const matrix={};sorted.forEach(tr=>{matrix[tr.id]={};courses.forEach(cs=>{matrix[tr.id][cs.id]=0});matrix[tr.id]['total']=0});
+  targets.forEach(b=>{if(matrix[b.trainerId]!==undefined&&b.courseId!==5){if(matrix[b.trainerId][b.courseId]!==undefined)matrix[b.trainerId][b.courseId]++;matrix[b.trainerId]['total']++}});
+  let html=`<div style="overflow-x:auto;margin-bottom:14px"><table class="data-table"><thead><tr>
+    <th>トレーナー</th>${courses.map(c=>`<th style="text-align:center">${c.name}</th>`).join('')}<th style="text-align:center;background:#e8f4fb">合計</th>
+  </tr></thead><tbody>`;
+  sorted.forEach(tr=>{const row=matrix[tr.id];html+=`<tr><td style="font-weight:500">${tr.name}</td>${courses.map(cs=>`<td style="text-align:center">${row[cs.id]||0} 本</td>`).join('')}<td style="text-align:center;font-weight:600;color:#1a8fc7;background:#f0f8ff">${row['total']||0} 本</td></tr>`});
+  html+=`<tr style="background:#f8f8f8;font-weight:600"><td>合計</td>${courses.map(cs=>`<td style="text-align:center">${sorted.reduce((s,tr)=>s+(matrix[tr.id][cs.id]||0),0)} 本</td>`).join('')}<td style="text-align:center;color:#1a8fc7;background:#f0f8ff">${targets.filter(b=>b.courseId!==5).length} 本</td></tr>`;
+  html+=`</tbody></table></div><div style="display:flex;gap:10px"><button class="mbtn primary" onclick="downloadLessonCsv()">📥 CSVをダウンロード</button></div>`;
+  document.getElementById('csv-preview').innerHTML=html;
+}
+function downloadLessonCsv(){
+  const from=document.getElementById('csv-from').value,to=document.getElementById('csv-to').value;
+  const targets=S.bookings.filter(b=>b.date>=from&&b.date<=to&&b.status!=='cancelled'&&b.status!=='rest');
+  const courses=S.courses.filter(c=>c.id!==5);
+  const sorted=[...S.trainers].sort((a,b)=>(a.priority||99)-(b.priority||99));
+  const matrix={};sorted.forEach(tr=>{matrix[tr.id]={};courses.forEach(cs=>{matrix[tr.id][cs.id]=0});matrix[tr.id]['total']=0});
+  targets.forEach(b=>{if(matrix[b.trainerId]!==undefined&&b.courseId!==5){if(matrix[b.trainerId][b.courseId]!==undefined)matrix[b.trainerId][b.courseId]++;matrix[b.trainerId]['total']++}});
+  const csv=[`期間：${from} 〜 ${to}`,['トレーナー',...courses.map(c=>c.name),'合計'].join(','),...sorted.map(tr=>[tr.name,...courses.map(cs=>matrix[tr.id][cs.id]||0),matrix[tr.id]['total']||0].join(',')),['合計',...courses.map(cs=>sorted.reduce((s,tr)=>s+(matrix[tr.id][cs.id]||0),0)),targets.filter(b=>b.courseId!==5).length].join(',')].join('\n');
+  // テーブルHTML生成
+  let tbl=`<table style="border-collapse:collapse;font-size:13px;width:100%"><thead><tr>
+    <th style="background:#f8f8f8;padding:10px 14px;border:1px solid #ddd;text-align:left">トレーナー</th>
+    ${courses.map(c=>`<th style="background:#f8f8f8;padding:10px 12px;border:1px solid #ddd;text-align:center;white-space:nowrap">${c.name}</th>`).join('')}
+    <th style="background:#e8f4fb;padding:10px 12px;border:1px solid #ddd;text-align:center;color:#1a8fc7;font-weight:600">合計</th>
+  </tr></thead><tbody>`;
+  sorted.forEach((tr,i)=>{
+    const row=matrix[tr.id];
+    tbl+=`<tr style="background:${i%2?'#fafafa':'#fff'}">
+      <td style="padding:10px 14px;border:1px solid #ddd;font-weight:500">${tr.name}</td>
+      ${courses.map(cs=>`<td style="padding:10px 12px;border:1px solid #eee;text-align:center">
+        <span style="font-size:16px;font-weight:600;color:${row[cs.id]>0?'#1a8fc7':'#ccc'}">${row[cs.id]||0}</span>
+        <span style="font-size:11px;color:#888"> 本</span>
+      </td>`).join('')}
+      <td style="padding:10px 12px;border:1px solid #eee;text-align:center;background:#f0f8ff">
+        <span style="font-size:18px;font-weight:700;color:#1a8fc7">${row['total']||0}</span>
+        <span style="font-size:11px;color:#888"> 本</span>
+      </td>
+    </tr>`;
+  });
+  // 合計行
+  const grandTotal=targets.filter(b=>b.courseId!==5).length;
+  tbl+=`<tr style="background:#f0f7ff;font-weight:600">
+    <td style="padding:10px 14px;border:1px solid #ddd;color:#1a8fc7">合計</td>
+    ${courses.map(cs=>`<td style="padding:10px 12px;border:1px solid #eee;text-align:center">
+      <span style="font-size:16px;font-weight:700;color:#1a8fc7">${sorted.reduce((s,tr)=>s+(matrix[tr.id][cs.id]||0),0)}</span>
+      <span style="font-size:11px;color:#888"> 本</span>
+    </td>`).join('')}
+    <td style="padding:10px 12px;border:1px solid #eee;text-align:center;background:#dbeeff">
+      <span style="font-size:18px;font-weight:700;color:#1a8fc7">${grandTotal}</span>
+      <span style="font-size:11px;color:#888"> 本</span>
+    </td>
+  </tr>`;
+  tbl+=`</tbody></table>`;
+  showCsvModal(csv,`レッスン本数_${from}_${to}.csv`,tbl);
+}
+
+// ===== SYSTEM SETTINGS =====
+function renderSettings(){
+  const dh=S.settings.dayHours;
+  const hOpts=(sel)=>Array.from({length:24},(_,i)=>`<option value="${i}"${i===sel?' selected':''}>${i}:00</option>`).join('');
+  document.getElementById('settings-content').innerHTML=`
+    <div class="pg-header"><span class="pg-title">システム設定</span></div>
+    <div class="settings-card"><h3>曜日別営業時間</h3>
+      ${DAY_NAMES.map((d,i)=>{const h=dh[i],c=!h;return`<div class="set-row">
+        <span style="font-size:13px;width:28px;font-weight:500;color:${i===5?'#1a8fc7':i===6?'#e24b4a':'#333'}">${d}</span>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;min-width:64px"><input type="checkbox" id="closed-${i}" ${c?'checked':''} onchange="toggleDayClosed(${i})"> 定休日</label>
+        <div id="day-hours-${i}" style="display:${c?'none':'flex'};align-items:center;gap:6px">
+          <select id="dopen-${i}" onchange="saveDayHour(${i})" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff">${hOpts(h?.open??9)}</select>時〜
+          <select id="dclose-${i}" onchange="saveDayHour(${i})" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff">${hOpts(h?.close??21)}</select>時
+        </div>${c?`<span style="font-size:12px;color:#aaa">定休日</span>`:''}
+      </div>`}).join('')}
+    </div>
+    <div class="settings-card"><h3>祝日の設定</h3>
+      <div class="set-row"><span style="font-size:13px">祝日も営業する</span><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${S.settings.holidayOpen?'checked':''} onchange="S.settings.holidayOpen=this.checked;renderSettings()"> 営業する</label></div>
+      ${S.settings.holidayOpen?`<div class="set-row"><span style="font-size:13px">祝日の営業時間</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <select onchange="S.settings.holidayOpen2=parseInt(this.value)" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff">${hOpts(S.settings.holidayOpen2||9)}</select>時〜
+          <select onchange="S.settings.holidayClose=parseInt(this.value)" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff">${hOpts(S.settings.holidayClose||19)}</select>時
+        </div></div>`:''}
+    </div>
+    <button class="mbtn primary" onclick="saveSettings()">設定を保存</button>`;
+}
+function toggleDayClosed(i){const c=document.getElementById(`closed-${i}`).checked;document.getElementById(`day-hours-${i}`).style.display=c?'none':'flex';S.settings.dayHours[i]=c?null:{open:9,close:21}}
+function saveDayHour(i){S.settings.dayHours[i]={open:parseInt(document.getElementById(`dopen-${i}`).value),close:parseInt(document.getElementById(`dclose-${i}`).value)}}
+function saveSettings(){renderCal();toast('✓ 設定を保存しました')}
+
+// ===== INIT =====
+// subtabを全て非表示に初期化
+['customers','courses','tags','trainers','shift','csv','system'].forEach(n=>{
+  const el=document.getElementById('subtab-'+n);if(el)el.style.display='none';
+});
+renderCal();
+</script>
+</body>
+</html>

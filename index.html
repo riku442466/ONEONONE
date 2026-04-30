@@ -277,7 +277,7 @@ body{font-family:var(--font-sans,sans-serif);font-size:13px;background:#f5f5f5;c
 </div>
 
 <!-- 予約モーダル -->
-<div id="bk-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:20px;z-index:200">
+<div id="bk-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
   <div class="modal" style="width:520px;max-height:85vh">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #eee">
       <h3 style="margin:0;border:none;padding:0">新規予約登録</h3>
@@ -648,7 +648,7 @@ function openBkModal(date,time,trId){
   [...document.getElementById('bk-s1-min').options].forEach(o=>o.selected=o.value===mVal);
   document.getElementById('bk-step1').style.display='block';document.getElementById('bk-step2').style.display='none';
   ['bk-kana1','bk-kana2','bk-name1','bk-name2','bk-phone','bk-memo'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('bk-modal').style.display='flex';
+  const m=document.getElementById('bk-modal');m.style.display='flex';m.style.alignItems='center';m.style.justifyContent='center';
 }
 function goStep2(){
   const cid=parseInt(document.getElementById('bk-s1-course').value);if(!cid)return alert('予約メニューを選択してください');
